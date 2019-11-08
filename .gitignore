@@ -102,3 +102,19 @@ venv.bak/
 
 # mypy
 .mypy_cache/
+
+# macOS
+.DS_Store
+
+# vscode 
+.vscode/
+
+# configuration files
+*.cfg
+
+# data files
+/data/interim
+/data/processed
+
+# vscode
+settings.json
