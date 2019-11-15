@@ -32,7 +32,6 @@ def main():
 
     print("**** Main ****")
     env_path = Path(".") / ".env"
-    print("".join([line for line in open(env_path)]))
     load_dotenv(dotenv_path=env_path, verbose=True)
 
     assert (os.getenv("DATA_PATH_LOCAL") is not None) and (
@@ -45,6 +44,8 @@ def main():
         cmd = get_command()
         if cmd == "L":
             data_path = os.getenv("DATA_PATH_LOCAL")
+            city_lat_lon_key = os.getenv("CITY_LAT_LON_KEY")
+            fars_key = os.getenv("FARS_KEY")
             print(f"\nRunning locally using data from {data_path}\n")
             break
 
