@@ -59,13 +59,13 @@ def main():
             sys.exit(0)
 
     spark = create_spark_session()
-    acc_df = spark.read.csv(
+    all_acc_df = spark.read.csv(
         "../../Data/FARS/CSV/FARS*NationalCSV/ACCIDENT.csv",
         header=True,
         inferSchema=True,
         mode="DROPMALFORMED",
     )
-    print(f"accident count: {acc_df.count():,}")
+    print(f"accident count: {all_acc_df.count():,}")
 
     pb_df = spark.read.csv(
         [
@@ -96,6 +96,30 @@ def main():
     join_expression = acc_with_pb_df["ST_CASE"] == pb_df["ST_CASE"]
     pb_acc_df = pb_df.join(acc_with_pb_df, join_expression, how="left")
     print(f"acc_pb_df.count() -> {pb_acc_df.count():,}")
+
+    # all accidents with consisten coding
+    all_acc_aux_df = spark.read.csv(
+        "../../Data/FARS/CSV/FARS*NationalCSV/ACC_AUX.csv",
+        header=True,
+        inferSchema=True,
+        mode="DROPMALFORMED",
+    )
+
+    # inner join acc_aux and accident dfs
+    all_acc_df.createOrReplaceTempView("all_acc_view")
+    all_acc_aux_df.createOrReplaceTempView("acc_aux_view")
+
+    # TODO - loop over directories, join files, create a list of dataframes, append them
+
+    acc_df = spark.sql(
+        """
+        SELECT * FROM all_acc_view all
+        INNER JOIN acc_aux_view aux
+        ON (all.ST_CASE = aux.ST_CASE)
+        AND (all.YEAR = aux.YEAR)"""
+    )
+    print(f"acc_df records: {acc_df.show(5)}")
+    print(f"acc_df count = : {acc_df.count():,}")
 
 
 if __name__ == "__main__":
