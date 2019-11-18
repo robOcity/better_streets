@@ -102,38 +102,27 @@ def main():
             sys.exit(0)
 
     spark = create_spark_session()
-    all_acc_df = spark.read.csv(
-        "../../Data/FARS/CSV/FARS*NationalCSV/ACCIDENT.CSV",
-        header=True,
-        inferSchema=True,
-        mode="DROPMALFORMED",
-    )
+    all_acc_df = read_csv("../../Data/FARS/CSV/FARS*NationalCSV/ACCIDENT.CSV")
     print(f"accident count: {all_acc_df.count():,}")
 
-    pb_df = spark.read.csv(
+    pb_df = read_csv(
         [
             "../../Data/FARS/CSV/FARS2014NationalCSV/PBTYPE.CSV",
             "../../Data/FARS/CSV/FARS2015NationalCSV/PBTYPE.CSV",
             "../../Data/FARS/CSV/FARS2016NationalCSV/PBTYPE.CSV",
             "../../Data/FARS/CSV/FARS2017NationalCSV/PBTYPE.CSV",
             "../../Data/FARS/CSV/FARS2018NationalCSV/PBTYPE.CSV",
-        ],
-        header=True,
-        inferSchema=True,
-        mode="DROPMALFORMED",
+        ]
     )
 
-    acc_with_pb_df = spark.read.csv(
+    acc_with_pb_df = read_csv(
         [
             "../../Data/FARS/CSV/FARS2014NationalCSV/ACCIDENT.CSV",
             "../../Data/FARS/CSV/FARS2015NationalCSV/ACCIDENT.CSV",
             "../../Data/FARS/CSV/FARS2016NationalCSV/ACCIDENT.CSV",
             "../../Data/FARS/CSV/FARS2017NationalCSV/ACCIDENT.CSV",
             "../../Data/FARS/CSV/FARS2018NationalCSV/ACCIDENT.CSV",
-        ],
-        header=True,
-        inferSchema=True,
-        mode="DROPMALFORMED",
+        ]
     )
     print(f"pb_df.count() -> {pb_df.count():,}")
     join_expression = acc_with_pb_df["ST_CASE"] == pb_df["ST_CASE"]
@@ -141,11 +130,8 @@ def main():
     print(f"acc_pb_df.count() -> {pb_acc_df.count():,}")
 
     # all accidents with consistent coding
-    all_acc_aux_df = spark.read.csv(
-        "../../Data/FARS/CSV/FARS*NationalCSV/ACC_AUX.CSV",
-        header=True,
-        inferSchema=True,
-        mode="DROPMALFORMED",
+    all_acc_aux_df = read_csv(
+        "../../Data/FARS/CSV/FARS*NationalCSV/ACC_AUX.CSV"
     )
 
     # inner join acc_aux and accident dfs
