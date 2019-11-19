@@ -1,6 +1,11 @@
 from pyspark.sql import functions as F
 from pyspark.sql import types as T
-from pyspark.sql import SparkSession, DataFrameReader, DataFrame
+from pyspark.sql import (
+    SparkSession,
+    DataFrameReader,
+    DataFrame,
+)
+from pyspark.sql.utils import AnalysisException
 from dotenv import load_dotenv
 from pathlib import Path
 from functools import reduce
@@ -56,8 +61,35 @@ def get_local_paths(root, pattern):
 
 def read_csv(csv_full_path):
     return create_spark_session().read.csv(
-        csv_full_path, header=True, inferSchema=True, mode="DROPMALFORMED",
+        csv_full_path,
+        header=True,
+        inferSchema=True,
+        enforceSchema=False,
+        mode="DROPMALFORMED",
     )
+
+    # find the columns that are not common
+
+
+def find_common_set_of_column_names(dfs):
+    cols = [set(df.columns) for df in dfs]
+    common_cols = list(reduce(set.intersection, map(set, cols)))
+    print("\n*** Commmon Columns: ", common_cols, "****\n")
+    return common_cols
+
+
+def fix_spaces_in_column_names(df):
+    new_names = []
+    for col in df.columns:
+        new_name = col.strip()
+        new_name = "".join(new_name.split())
+        new_name = new_name.replace(".", "")
+        new_names.append(new_name)
+    print("fix_spaces_in_column_names")
+    print(f"WAS: {df.columns}")
+    df = df.toDF(*new_names)
+    print(f"IS:  {df.columns}")
+    return df
 
 
 def get_S3_paths(bucket, pattern):
@@ -102,8 +134,6 @@ def main():
             sys.exit(0)
 
     spark = create_spark_session()
-    all_acc_df = read_csv("../../Data/FARS/CSV/FARS*NationalCSV/ACCIDENT.CSV")
-    print(f"accident count: {all_acc_df.count():,}")
 
     pb_df = read_csv(
         [
@@ -129,49 +159,108 @@ def main():
     pb_acc_df = pb_df.join(acc_with_pb_df, join_expression, how="left")
     print(f"acc_pb_df.count() -> {pb_acc_df.count():,}")
 
-    # all accidents with consistent coding
-    all_acc_aux_df = read_csv(
-        "../../Data/FARS/CSV/FARS*NationalCSV/ACC_AUX.CSV"
-    )
-
-    # inner join acc_aux and accident dfs
-    all_acc_df.createOrReplaceTempView("all_acc_view")
-    all_acc_aux_df.createOrReplaceTempView("acc_aux_view")
-
     # loop over directories with accident.csv and acc_aux.csv files
     print(f"data_path={data_path}")
     dirs = find_dirs_with_both_files("ACCIDENT.CSV", "ACC_AUX.CSV", data_path)
     print(f"len(dirs)={len(dirs)}")
 
+    count = 0
+    accident_dfs, acc_aux_dfs, acc_dfs = [], [], []
     # join each pair together
-    acc_dfs = []
     for _dir in dirs:
-        accident_df = read_csv(str(Path(_dir).joinpath("ACCIDENT.CSV")),)
-        print(f"accident_df: {accident_df.count()}, {accident_df.columns}")
+        print("\n", 80 * "*", "\n", count, dir, "\n")
+        count += 1
+        # read in accident data and remove columns not common to all files
+        accident_df = read_csv(str(Path(_dir).joinpath("ACCIDENT.CSV"))).select(
+            "WEATHER",
+            "MILEPT",
+            "HARM_EV",
+            "COUNTY",
+            "DAY",
+            "RAIL",
+            "NOT_HOUR",
+            "NOT_MIN",
+            "CITY",
+            "ST_CASE",
+            "DAY_WEEK",
+            "PERSONS",
+            "MINUTE",
+            "HOUR",
+            "ARR_MIN",
+            "YEAR",
+            "SP_JUR",
+            "MONTH",
+            "ARR_HOUR",
+            "DRUNK_DR",
+            "REL_ROAD",
+            "VE_FORMS",
+            "LGT_COND",
+            "FATALS",
+            "STATE",
+        )
+        accident_df = fix_spaces_in_column_names(accident_df)
+        accident_dfs.append(accident_df)
 
-        acc_aux_df = read_csv(str(Path(_dir).joinpath("ACC_AUX.CSV")))
-        print(f"acc_aux_df: {acc_aux_df.count()}\n{acc_aux_df.columns}")
+        acc_aux_df = read_csv(str(Path(_dir).joinpath("ACC_AUX.CSV"))).select(
+            "A_D21_24",
+            "A_D15_20",
+            "STATE",
+            "A_DROWSY",
+            "A_PEDAL",
+            "A_ROLL",
+            "A_MANCOL",
+            "A_D65PLS",
+            "A_TOD",
+            "YEAR",
+            "A_CRAINJ",
+            "A_RD",
+            "ST_CASE",
+            "A_RELRD",
+            "A_LT",
+            "FATALS",
+            "A_POSBAC",
+            "A_CT",
+            "COUNTY",
+            "A_D16_19",
+            "A_INTSEC",
+            "A_HR",
+            "A_DOW",
+            "A_D16_20",
+            "A_SPCRA",
+            "A_D16_24",
+            "A_REGION",
+            "A_INTER",
+            "A_DIST",
+            "A_JUNC",
+            "A_PED",
+            "A_D15_19",
+            "A_POLPUR",
+            "A_MC",
+            "A_RU",
+            "A_ROADFC",
+        )
+        acc_aux_df = fix_spaces_in_column_names(acc_aux_df)
+        acc_aux_dfs.append(acc_aux_df)
 
-        acc_df = accident_df.join(acc_aux_df, on="ST_CASE")
-        print(f"acc_df: {acc_df.count()}\n{acc_df.columns}")
-
+        acc_df = accident_df.join(acc_aux_df, on="ST_CASE").drop(
+            "STATE",
+            "YEAR",
+            "COUNTY",
+            "FATALS",
+            "BIA",
+            "INDIAN_RES",
+            "SPJ_INDIAN",
+        )
         acc_dfs.append(acc_df)
 
     # append them together
-    print(f"number of joined df: {len(acc_dfs)}")
-    all_acc_df = reduce(DataFrame.unionByName, acc_dfs)
-    print(f"#rows in all_acc_df{all_acc_df.count():,}")
-    print(f"cols: {all_acc_df.columns}")
+    try:
+        all_acc_df = reduce(DataFrame.unionByName, acc_dfs)
+    except AnalysisException as ae:
+        print(f"Excepetion while processing: {_dir}")
 
-    acc_df = spark.sql(
-        """
-        SELECT * FROM all_acc_view all
-        INNER JOIN acc_aux_view aux
-        ON (all.ST_CASE = aux.ST_CASE)
-        AND (all.YEAR = aux.YEAR)"""
-    )
-    print(f"acc_df records: {acc_df.show(5)}")
-    print(f"acc_df count = : {acc_df.count():,}")
+    accident_common_cols = find_common_set_of_column_names(accident_dfs)
+    acc_aux_common_cols = find_common_set_of_column_names(acc_aux_dfs)
 
 
 if __name__ == "__main__":
