@@ -15,12 +15,11 @@ import sys
 
 def create_spark_session():
     """Return a SparkSession object."""
+    # TODO clean-up
     # spark = SparkSession.builder.config(
     #     "spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.0"
     # ).getOrCreate()
     spark = SparkSession.builder.getOrCreate()
-    # TODO clean-up
-    print(f"\ncreate_spark_session() --> {type(spark)}\n")
     return spark
 
 
@@ -74,7 +73,6 @@ def read_csv(csv_full_path):
 def find_common_set_of_column_names(dfs):
     cols = [set(df.columns) for df in dfs]
     common_cols = list(reduce(set.intersection, map(set, cols)))
-    print("\n*** Commmon Columns: ", common_cols, "****\n")
     return common_cols
 
 
@@ -85,11 +83,7 @@ def fix_spaces_in_column_names(df):
         new_name = "".join(new_name.split())
         new_name = new_name.replace(".", "")
         new_names.append(new_name)
-    print("fix_spaces_in_column_names")
-    print(f"WAS: {df.columns}")
-    df = df.toDF(*new_names)
-    print(f"IS:  {df.columns}")
-    return df
+    return df.toDF(*new_names)
 
 
 def get_S3_paths(bucket, pattern):
@@ -99,7 +93,6 @@ def get_S3_paths(bucket, pattern):
 def main():
     """Extracts, transforms and loads the traffic accident data."""
 
-    print("**** Main ****")
     env_path = Path(".") / ".env"
     load_dotenv(dotenv_path=env_path, verbose=True)
 
@@ -135,7 +128,7 @@ def main():
 
     spark = create_spark_session()
 
-    pb_df = read_csv(
+    recent_pb_df = read_csv(
         [
             "../../Data/FARS/CSV/FARS2014NationalCSV/PBTYPE.CSV",
             "../../Data/FARS/CSV/FARS2015NationalCSV/PBTYPE.CSV",
@@ -144,8 +137,9 @@ def main():
             "../../Data/FARS/CSV/FARS2018NationalCSV/PBTYPE.CSV",
         ]
     )
+    recent_pb_df = fix_spaces_in_column_names(recent_pb_df)
 
-    acc_with_pb_df = read_csv(
+    recent_accident_df = read_csv(
         [
             "../../Data/FARS/CSV/FARS2014NationalCSV/ACCIDENT.CSV",
             "../../Data/FARS/CSV/FARS2015NationalCSV/ACCIDENT.CSV",
@@ -153,23 +147,52 @@ def main():
             "../../Data/FARS/CSV/FARS2017NationalCSV/ACCIDENT.CSV",
             "../../Data/FARS/CSV/FARS2018NationalCSV/ACCIDENT.CSV",
         ]
+    ).select(
+        "WEATHER",
+        "MILEPT",
+        "HARM_EV",
+        "COUNTY",
+        "DAY",
+        "RAIL",
+        "NOT_HOUR",
+        "NOT_MIN",
+        "CITY",
+        "ST_CASE",
+        "DAY_WEEK",
+        "PERSONS",
+        "MINUTE",
+        "HOUR",
+        "ARR_MIN",
+        "YEAR",
+        "SP_JUR",
+        "MONTH",
+        "ARR_HOUR",
+        "DRUNK_DR",
+        "REL_ROAD",
+        "VE_FORMS",
+        "LGT_COND",
+        "FATALS",
+        "STATE",
     )
-    print(f"pb_df.count() -> {pb_df.count():,}")
-    join_expression = acc_with_pb_df["ST_CASE"] == pb_df["ST_CASE"]
-    pb_acc_df = pb_df.join(acc_with_pb_df, join_expression, how="left")
-    print(f"acc_pb_df.count() -> {pb_acc_df.count():,}")
+    recent_accident_df = fix_spaces_in_column_names(recent_accident_df)
+    print(
+        f"\nNumber of motor vehicle accidents involving ped / cyclists (2014-2018): {recent_accident_df.count():,}"
+    )
+
+    join_expression = recent_accident_df["ST_CASE"] == recent_pb_df["ST_CASE"]
+    pb_acc_df = recent_pb_df.join(recent_accident_df, join_expression)
+    print(
+        f"\nNumber of pedestrians & cyclists hit (2014-2018): {pb_acc_df.count():,}"
+    )
 
     # loop over directories with accident.csv and acc_aux.csv files
-    print(f"data_path={data_path}")
     dirs = find_dirs_with_both_files("ACCIDENT.CSV", "ACC_AUX.CSV", data_path)
-    print(f"len(dirs)={len(dirs)}")
-
-    count = 0
+    count = 1
     accident_dfs, acc_aux_dfs, acc_dfs = [], [], []
+
     # join each pair together
+    print("Processing Directories")
     for _dir in dirs:
-        print("\n", 80 * "*", "\n", count, dir, "\n")
-        count += 1
         # read in accident data and remove columns not common to all files
         accident_df = read_csv(str(Path(_dir).joinpath("ACCIDENT.CSV"))).select(
             "WEATHER",
@@ -252,15 +275,31 @@ def main():
             "SPJ_INDIAN",
         )
         acc_dfs.append(acc_df)
+        print(
+            f"{count} dir:{_dir} ,rows: {acc_df.count():,} cols: {len(acc_df.columns):,}"
+        )
+        count += 1
 
-    # append them together
+    # append using the set of columns common to all
     try:
+        accident_common_cols = find_common_set_of_column_names(accident_dfs)
+        acc_aux_common_cols = find_common_set_of_column_names(acc_aux_dfs)
         all_acc_df = reduce(DataFrame.unionByName, acc_dfs)
-    except AnalysisException as ae:
-        print(f"Excepetion while processing: {_dir}")
+    except Exception:
+        print(f"Excepetion while processing: {_dir}", file=sys.stderr)
+        print(
+            f"Use common columns in ACCIDENT.CSV files:\n{accident_common_cols}",
+            file=sys.stderr,
+        )
+        print(
+            f"Use common columns in ACC_AUX.CSV files:\n{acc_aux_common_cols}",
+            file=sys.stderr,
+        )
 
-    accident_common_cols = find_common_set_of_column_names(accident_dfs)
-    acc_aux_common_cols = find_common_set_of_column_names(acc_aux_dfs)
+    # do some analysis!!
+    print(
+        f"\nNumber of motor vehicle accidents (1982-2018): {all_acc_df.count():,}"
+    )
 
 
 if __name__ == "__main__":
