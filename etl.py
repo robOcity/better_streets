@@ -15,6 +15,7 @@ import sys
 
 def create_spark_session():
     """Return a SparkSession object."""
+
     # TODO clean-up
     # spark = SparkSession.builder.config(
     #     "spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.0"
@@ -24,7 +25,7 @@ def create_spark_session():
 
 
 def get_command():
-    """Gets the command from the user."""
+    """Return the command from the user."""
 
     cmd = ""
     while cmd not in ["L", "A", "Q"]:
@@ -35,6 +36,8 @@ def get_command():
 
 
 def make_filenames_case_consistent(data_path):
+    """Returns a list of Path objects with consistent upper-case names."""
+
     return [
         p.rename(p.parent / p.name.upper())
         for p in Path(data_path).rglob("*.csv")
@@ -42,6 +45,8 @@ def make_filenames_case_consistent(data_path):
 
 
 def find_dirs_with_both_files(file_1, file_2, data_path):
+    """Returns a list of directories that contain both file_1 and file_2."""
+
     return sorted(
         [
             _dir
@@ -59,6 +64,8 @@ def get_local_paths(root, pattern):
 
 
 def read_csv(csv_full_path):
+    """Returns the PySpark (v2.x) SessionSession object."""
+
     return create_spark_session().read.csv(
         csv_full_path,
         header=True,
@@ -71,12 +78,16 @@ def read_csv(csv_full_path):
 
 
 def find_common_set_of_column_names(dfs):
+    """Returns the set of columns common to the list of dataframes provided."""
+
     cols = [set(df.columns) for df in dfs]
     common_cols = list(reduce(set.intersection, map(set, cols)))
     return common_cols
 
 
 def fix_spaces_in_column_names(df):
+    """Returns the dataframe provided with column names without spaces."""
+
     new_names = []
     for col in df.columns:
         new_name = col.strip()
@@ -87,6 +98,8 @@ def fix_spaces_in_column_names(df):
 
 
 def get_S3_paths(bucket, pattern):
+    """Returns a list of folders in an S3 bucket."""
+
     raise NotImplementedError("get_S3_paths")
 
 
@@ -128,6 +141,7 @@ def main():
 
     spark = create_spark_session()
 
+    # read in pedestrain / cyclist data for recent years with consistent data labeling
     recent_pb_df = read_csv(
         [
             "../../Data/FARS/CSV/FARS2014NationalCSV/PBTYPE.CSV",
@@ -139,6 +153,7 @@ def main():
     )
     recent_pb_df = fix_spaces_in_column_names(recent_pb_df)
 
+    # read in accident data for recent years and columns common to all years
     recent_accident_df = read_csv(
         [
             "../../Data/FARS/CSV/FARS2014NationalCSV/ACCIDENT.CSV",
@@ -179,8 +194,11 @@ def main():
         f"\nNumber of motor vehicle accidents involving ped / cyclists (2014-2018): {recent_accident_df.count():,}"
     )
 
+    # join the dataframes where many peds/cyclists can be involved in a single accident
     join_expression = recent_accident_df["ST_CASE"] == recent_pb_df["ST_CASE"]
-    pb_acc_df = recent_pb_df.join(recent_accident_df, join_expression)
+    pb_acc_df = recent_pb_df.join(
+        recent_accident_df, join_expression, how="left_outer"
+    )
     print(
         f"\nNumber of pedestrians & cyclists hit (2014-2018): {pb_acc_df.count():,}"
     )
@@ -193,7 +211,7 @@ def main():
     # join each pair together
     print("Processing Directories")
     for _dir in dirs:
-        # read in accident data and remove columns not common to all files
+        # read in csv data and keep columns common to all years
         accident_df = read_csv(str(Path(_dir).joinpath("ACCIDENT.CSV"))).select(
             "WEATHER",
             "MILEPT",
@@ -224,6 +242,7 @@ def main():
         accident_df = fix_spaces_in_column_names(accident_df)
         accident_dfs.append(accident_df)
 
+        # read in csv and only keep columns common to all years
         acc_aux_df = read_csv(str(Path(_dir).joinpath("ACC_AUX.CSV"))).select(
             "A_D21_24",
             "A_D15_20",
@@ -265,25 +284,23 @@ def main():
         acc_aux_df = fix_spaces_in_column_names(acc_aux_df)
         acc_aux_dfs.append(acc_aux_df)
 
+        # join dataframes and drop duplicated columns after merge
         acc_df = accident_df.join(acc_aux_df, on="ST_CASE").drop(
-            "STATE",
-            "YEAR",
-            "COUNTY",
-            "FATALS",
-            "BIA",
-            "INDIAN_RES",
-            "SPJ_INDIAN",
+            "STATE", "YEAR", "COUNTY", "FATALS",
         )
         acc_dfs.append(acc_df)
+
         print(
-            f"{count} dir:{_dir} ,rows: {acc_df.count():,} cols: {len(acc_df.columns):,}"
+            f"{count} dir:{_dir}  rows: {acc_df.count():,}  cols: {len(acc_df.columns):,}"
         )
         count += 1
 
-    # append using the set of columns common to all
     try:
+        # find columns common to all years
         accident_common_cols = find_common_set_of_column_names(accident_dfs)
         acc_aux_common_cols = find_common_set_of_column_names(acc_aux_dfs)
+
+        # append combined accident files for all years
         all_acc_df = reduce(DataFrame.unionByName, acc_dfs)
     except Exception:
         print(f"Excepetion while processing: {_dir}", file=sys.stderr)
