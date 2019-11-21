@@ -1,16 +1,12 @@
-from pyspark.sql import functions as F
-from pyspark.sql import types as T
-from pyspark.sql import (
-    SparkSession,
-    DataFrameReader,
-    DataFrame,
-)
-from pyspark.sql.utils import AnalysisException
-from dotenv import load_dotenv
-from pathlib import Path
-from functools import reduce
 import os
 import sys
+from pathlib import Path
+from functools import reduce
+from pyspark.sql import (
+    SparkSession,
+    DataFrame,
+)
+from dotenv import load_dotenv
 
 
 def create_spark_session():
@@ -27,16 +23,23 @@ def create_spark_session():
 def get_command():
     """Return the command from the user."""
 
+    # TODO cleanup
+    print("In get_command()")
     cmd = ""
     while cmd not in ["L", "A", "Q"]:
-        cmd = input("\nL - [L]ocal\nA - [A]WS\nQ - [Q]uit\nCommand: ")[0].upper()
+        cmd = input("\nL - [L]ocal\nA - [A]WS\nQ - [Q]uit\nCommand: ")[
+            0
+        ].upper()
     return cmd
 
 
 def make_filenames_case_consistent(data_path):
     """Returns a list of Path objects with consistent upper-case names."""
 
-    return [p.rename(p.parent / p.name.upper()) for p in Path(data_path).rglob("*.csv")]
+    return [
+        p.rename(p.parent / p.name.upper())
+        for p in Path(data_path).rglob("*.csv")
+    ]
 
 
 def find_dirs_with_both_files(file_1, file_2, data_path):
@@ -92,7 +95,37 @@ def fix_spaces_in_column_names(df):
     return df.toDF(*new_names)
 
 
-def get_S3_paths(bucket, pattern):
+def get_root_dir(env="DATA_LOCAL_ROOT"):
+    """Returns the root data directory."""
+
+    return Path(os.getenv(env))
+
+
+def get_raw_path(env="DATA_LOCAL_ROOT"):
+    """Returns the path to the 'raw' data directory containing unprocessed data."""
+
+    return get_root_dir(env) / "raw"
+
+
+def get_interim_data_path(env="DATA_LOCAL_ROOT"):
+    """Returns the path to the 'interim' data directory containing in-production data."""
+
+    return get_root_dir(env) / "interim"
+
+
+def get_processed_data_path(env="DATA_LOCAL_ROOT"):
+    """Returns the path to the 'processed' data directory containing fully-processed data."""
+
+    return get_root_dir(env) / "processed"
+
+
+def get_fars_path(env="DATA_LOCAL_ROOT"):
+    """Returns the path to the top-level FARS directory."""
+
+    return get_root_dir(env) / os.getenv("FARS_KEY")
+
+
+def get_S3_path(bucket):
     """Returns a list of folders in an S3 bucket."""
 
     raise NotImplementedError("get_S3_paths")
@@ -108,28 +141,20 @@ def main():
         os.getenv("DATA_S3_BUCKET") is not None
     ), "Environment variable with the root data directory has not been set"
 
-    raw_fars_data_path = ""
-
+    # TODO clean-up
+    print("Main before while")
     while True:
         cmd = get_command()
         if cmd == "L":
             raw_fars_data_path = Path(os.getenv("DATA_LOCAL_ROOT")) / os.getenv(
                 "FARS_KEY"
             )
-            interim_data_path = Path(os.getenv("DATA_LOCAL_ROOT")) / "interim"
-            processed_data_path = Path(os.getenv("DATA_LOCAL_ROOT")) / "processed"
-            print(f"raw_fars_data_path: {raw_fars_data_path}")
-            city_lat_lon_key = os.getenv("CITY_LAT_LON_KEY")
-            fars_key = os.getenv("FARS_KEY")
-            make_filenames_case_consistent
-            print(f"\nRunning locally using FARS data from {raw_fars_data_path}\n")
+
+            make_filenames_case_consistent(get_fars_path())
+            print(f"\nRunning locally using FARS data from {get_fars_path()}\n")
             break
 
         elif cmd == "A":
-            raw_fars_data_path = Path(os.getenv("DATA_S3_BUCKET")) / os.getenv(
-                "FARS_KEY"
-            )
-            print("\nRunning on AWS using data from {raw_fars_data_path}\n")
             raise NotImplementedError()
 
         elif cmd == "Q":
@@ -139,7 +164,9 @@ def main():
     spark = create_spark_session()
 
     # loop over directories with accident.csv and acc_aux.csv files
-    dirs = find_dirs_with_both_files("ACCIDENT.CSV", "ACC_AUX.CSV", raw_fars_data_path)
+    dirs = find_dirs_with_both_files(
+        "ACCIDENT.CSV", "ACC_AUX.CSV", raw_fars_data_path
+    )
     count = 1
     accident_dfs, acc_aux_dfs, acc_dfs = [], [], []
 
@@ -244,77 +271,87 @@ def main():
         print(f"Use only common ACC_AUX.CSV columns:\n{acc_aux_common_cols}")
 
     # show the number of records
-    print(f"\nNumber of motor vehicle accidents (1982-2018): {all_acc_df.count():,}")
+    print(
+        f"\nNumber of motor vehicle accidents (1982-2018): {all_acc_df.count():,}"
+    )
 
     # save resulting dataframe for analysis
-    output_path = str(interim_data_path.joinpath("all_accidents_1982_to_2018.csv"))
+    output_path = str(
+        get_interim_data_path().joinpath("all_accidents_1982_to_2018.csv")
+    )
     print(f"output_path={output_path}")
     all_acc_df.write.csv(output_path, mode="overwrite", header=True)
 
+    # read in pedestrain / cyclist data for recent years with consistent data labeling
+    recent_pb_df = read_csv(
+        [
+            "../../Data/external/FARS/CSV/FARS2014NationalCSV/PBTYPE.CSV",
+            "../../Data/external/FARS/CSV/FARS2015NationalCSV/PBTYPE.CSV",
+            "../../Data/external/FARS/CSV/FARS2016NationalCSV/PBTYPE.CSV",
+            "../../Data/external/FARS/CSV/FARS2017NationalCSV/PBTYPE.CSV",
+            "../../Data/external/FARS/CSV/FARS2018NationalCSV/PBTYPE.CSV",
+        ]
+    )
+    recent_pb_df = fix_spaces_in_column_names(recent_pb_df)
 
-# read in pedestrain / cyclist data for recent years with consistent data labeling
-recent_pb_df = read_csv(
-    [
-        "../../Data/external/FARS/CSV/FARS2014NationalCSV/PBTYPE.CSV",
-        "../../Data/external/FARS/CSV/FARS2015NationalCSV/PBTYPE.CSV",
-        "../../Data/external/FARS/CSV/FARS2016NationalCSV/PBTYPE.CSV",
-        "../../Data/external/FARS/CSV/FARS2017NationalCSV/PBTYPE.CSV",
-        "../../Data/external/FARS/CSV/FARS2018NationalCSV/PBTYPE.CSV",
-    ]
-)
-recent_pb_df = fix_spaces_in_column_names(recent_pb_df)
+    # read in accident data for recent years and columns common to all years
+    recent_accident_df = read_csv(
+        [
+            "../../Data/external/FARS/CSV/FARS2014NationalCSV/ACCIDENT.CSV",
+            "../../Data/external/FARS/CSV/FARS2015NationalCSV/ACCIDENT.CSV",
+            "../../Data/external/FARS/CSV/FARS2016NationalCSV/ACCIDENT.CSV",
+            "../../Data/external/FARS/CSV/FARS2017NationalCSV/ACCIDENT.CSV",
+            "../../Data/external/FARS/CSV/FARS2018NationalCSV/ACCIDENT.CSV",
+        ]
+    ).select(
+        "WEATHER",
+        "MILEPT",
+        "HARM_EV",
+        "COUNTY",
+        "DAY",
+        "RAIL",
+        "NOT_HOUR",
+        "NOT_MIN",
+        "CITY",
+        "ST_CASE",
+        "DAY_WEEK",
+        "PERSONS",
+        "MINUTE",
+        "HOUR",
+        "ARR_MIN",
+        "YEAR",
+        "SP_JUR",
+        "MONTH",
+        "ARR_HOUR",
+        "DRUNK_DR",
+        "REL_ROAD",
+        "VE_FORMS",
+        "LGT_COND",
+        "FATALS",
+        "STATE",
+    )
+    recent_accident_df = fix_spaces_in_column_names(recent_accident_df)
+    print(
+        f"\nNumber of motor vehicle accidents involving ped / cyclists (2014-2018): {recent_accident_df.count():,}"
+    )
 
-# read in accident data for recent years and columns common to all years
-recent_accident_df = read_csv(
-    [
-        "../../Data/external/FARS/CSV/FARS2014NationalCSV/ACCIDENT.CSV",
-        "../../Data/external/FARS/CSV/FARS2015NationalCSV/ACCIDENT.CSV",
-        "../../Data/external/FARS/CSV/FARS2016NationalCSV/ACCIDENT.CSV",
-        "../../Data/external/FARS/CSV/FARS2017NationalCSV/ACCIDENT.CSV",
-        "../../Data/external/FARS/CSV/FARS2018NationalCSV/ACCIDENT.CSV",
-    ]
-).select(
-    "WEATHER",
-    "MILEPT",
-    "HARM_EV",
-    "COUNTY",
-    "DAY",
-    "RAIL",
-    "NOT_HOUR",
-    "NOT_MIN",
-    "CITY",
-    "ST_CASE",
-    "DAY_WEEK",
-    "PERSONS",
-    "MINUTE",
-    "HOUR",
-    "ARR_MIN",
-    "YEAR",
-    "SP_JUR",
-    "MONTH",
-    "ARR_HOUR",
-    "DRUNK_DR",
-    "REL_ROAD",
-    "VE_FORMS",
-    "LGT_COND",
-    "FATALS",
-    "STATE",
-)
-recent_accident_df = fix_spaces_in_column_names(recent_accident_df)
-print(
-    f"\nNumber of motor vehicle accidents involving ped / cyclists (2014-2018): {recent_accident_df.count():,}"
-)
+    # join the dataframes where many peds/cyclists can be involved in a single accident
+    join_expression = recent_accident_df["ST_CASE"] == recent_pb_df["ST_CASE"]
+    pb_acc_df = recent_pb_df.join(
+        recent_accident_df, join_expression, how="left_outer"
+    )
+    print(
+        f"\nNumber of pedestrians & cyclists hit (2014-2018): {pb_acc_df.count():,}"
+    )
 
-# join the dataframes where many peds/cyclists can be involved in a single accident
-join_expression = recent_accident_df["ST_CASE"] == recent_pb_df["ST_CASE"]
-pb_acc_df = recent_pb_df.join(recent_accident_df, join_expression, how="left_outer")
-print(f"\nNumber of pedestrians & cyclists hit (2014-2018): {pb_acc_df.count():,}")
-
-# save resulting dataframe for analysis
-output_path = str(interim_data_path.joinpath("ped_bike_accidents_2014_to_2018.csv"))
-print(f"output_path={output_path}")
-recent_accident_df.write.csv(output_path, mode="overwrite", header=True)
+    # save resulting dataframe for analysis
+    output_path = str(
+        get_interim_data_path().joinpath("ped_bike_accidents_2014_to_2018.csv")
+    )
+    print(f"output_path={output_path}")
+    recent_accident_df.write.csv(output_path, mode="overwrite", header=True)
 
 
 if __name__ == "__main__":
+    print("About to run main()")
     main()
