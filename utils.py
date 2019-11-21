@@ -16,6 +16,12 @@ def create_spark_session():
     return spark
 
 
+def assert_environment_is_good():
+    assert (os.getenv("DATA_LOCAL_ROOT") is not None) and (
+        os.getenv("DATA_S3_BUCKET") is not None
+    ), "Environment variable with the root data directory has not been set"
+
+
 def read_csv(csv_full_path):
     """Returns the PySpark (v2.x) SessionSession object."""
 
