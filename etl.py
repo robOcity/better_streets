@@ -7,17 +7,7 @@ from pyspark.sql import (
     DataFrame,
 )
 from dotenv import load_dotenv
-
-
-def create_spark_session():
-    """Return a SparkSession object."""
-
-    # TODO clean-up
-    # spark = SparkSession.builder.config(
-    #     "spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.0"
-    # ).getOrCreate()
-    spark = SparkSession.builder.getOrCreate()
-    return spark
+import utils
 
 
 def get_command():
@@ -60,18 +50,6 @@ def get_local_paths(root, pattern):
     path = Path(root)
     return path.glob(pattern)
 
-
-def read_csv(csv_full_path):
-    """Returns the PySpark (v2.x) SessionSession object."""
-
-    return create_spark_session().read.csv(
-        csv_full_path,
-        header=True,
-        inferSchema=True,
-        enforceSchema=False,
-        mode="DROPMALFORMED",
-    )
-
     # find the columns that are not common
 
 
@@ -95,42 +73,6 @@ def fix_spaces_in_column_names(df):
     return df.toDF(*new_names)
 
 
-def get_root_dir(env="DATA_LOCAL_ROOT"):
-    """Returns the root data directory."""
-
-    return Path(os.getenv(env))
-
-
-def get_raw_path(env="DATA_LOCAL_ROOT"):
-    """Returns the path to the 'raw' data directory containing unprocessed data."""
-
-    return get_root_dir(env) / "raw"
-
-
-def get_interim_data_path(env="DATA_LOCAL_ROOT"):
-    """Returns the path to the 'interim' data directory containing in-production data."""
-
-    return get_root_dir(env) / "interim"
-
-
-def get_processed_data_path(env="DATA_LOCAL_ROOT"):
-    """Returns the path to the 'processed' data directory containing fully-processed data."""
-
-    return get_root_dir(env) / "processed"
-
-
-def get_fars_path(env="DATA_LOCAL_ROOT"):
-    """Returns the path to the top-level FARS directory."""
-
-    return get_root_dir(env) / os.getenv("FARS_KEY")
-
-
-def get_S3_path(bucket):
-    """Returns a list of folders in an S3 bucket."""
-
-    raise NotImplementedError("get_S3_paths")
-
-
 def main():
     """Extracts, transforms and loads the traffic accident data."""
 
@@ -150,8 +92,10 @@ def main():
                 "FARS_KEY"
             )
 
-            make_filenames_case_consistent(get_fars_path())
-            print(f"\nRunning locally using FARS data from {get_fars_path()}\n")
+            make_filenames_case_consistent(utils.get_fars_path())
+            print(
+                f"\nRunning locally using FARS data from {utils.get_fars_path()}\n"
+            )
             break
 
         elif cmd == "A":
@@ -161,7 +105,7 @@ def main():
             print("\nExiting")
             sys.exit(0)
 
-    spark = create_spark_session()
+    spark = utils.create_spark_session()
 
     # loop over directories with accident.csv and acc_aux.csv files
     dirs = find_dirs_with_both_files(
@@ -174,7 +118,9 @@ def main():
     print("\nProcessing Directories")
     for _dir in dirs:
         # read in csv data and keep columns common to all years
-        accident_df = read_csv(str(Path(_dir).joinpath("ACCIDENT.CSV"))).select(
+        accident_df = utils.read_csv(
+            str(Path(_dir).joinpath("ACCIDENT.CSV"))
+        ).select(
             "ST_CASE",
             "COUNTY",
             "STATE",
@@ -192,7 +138,9 @@ def main():
         accident_dfs.append(accident_df)
 
         # read in csv and only keep columns common to all years
-        acc_aux_df = read_csv(str(Path(_dir).joinpath("ACC_AUX.CSV"))).select(
+        acc_aux_df = utils.read_csv(
+            str(Path(_dir).joinpath("ACC_AUX.CSV"))
+        ).select(
             "ST_CASE",
             "FATALS",
             "YEAR",
@@ -267,7 +215,7 @@ def main():
 
     # save resulting dataframe for analysis
     output_path = str(
-        get_interim_data_path().joinpath("all_accidents_1982_to_2018.csv")
+        utils.get_interim_data_path().joinpath("all_accidents_1982_to_2018.csv")
     )
     print(f"output_path={output_path}")
     all_acc_df.write.csv(output_path, mode="overwrite", header=True)

@@ -1,27 +1,70 @@
+import os
 from pathlib import Path
 from dotenv import load_dotenv
 from pathlib import Path
-import os
+from pyspark.sql import SparkSession, DataFrame
 
 
-def list_files(root, filename, extension):
-    path = Path(root)
-    return list(path.glob(f"**/{filename}.{extension}"))
+def create_spark_session():
+    """Return a SparkSession object."""
+
+    # TODO clean-up
+    # spark = SparkSession.builder.config(
+    #     "spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.0"
+    # ).getOrCreate()
+    spark = SparkSession.builder.getOrCreate()
+    return spark
 
 
-def main():
-    # TODO create test
-    # 2015 has mixed case file names: acc_aux.csv, Factor.csv, ACCIDENT.csv
-    env_path = Path(".") / ".env"
-    load_dotenv(dotenv_path=env_path, verbose=True)
-    data_root = os.getenv("DATA_PATH_LOCAL")
-    city_lat_lon_key = os.getenv("CITY_LAT_LON_KEY")
-    fars_key = os.getenv("FARS_KEY")
-    file_list = list_files(data_root, "ACC_AUX", "CSV")
-    print("\n".join([str(p) for p in sorted(file_list)]))
-    print(len(file_list))
-    assert len(file_list) == 37, "Case insensetive file handling is lossing data files"
+def read_csv(csv_full_path):
+    """Returns the PySpark (v2.x) SessionSession object."""
+
+    return create_spark_session().read.csv(
+        csv_full_path,
+        header=True,
+        inferSchema=True,
+        enforceSchema=False,
+        mode="DROPMALFORMED",
+    )
 
 
-if __name__ == "__main__":
-    main()
+def write_csv(df, path):
+    """Saves the dataframe as partitioned CSV files under the specified path."""
+
+    df.csv(path, mode="overwrite", header=True)
+
+
+def get_root_dir(env="DATA_LOCAL_ROOT"):
+    """Returns the root data directory."""
+
+    return Path(os.getenv(env))
+
+
+def get_raw_path(env="DATA_LOCAL_ROOT"):
+    """Returns the path to the 'raw' data directory containing unprocessed data."""
+
+    return get_root_dir(env) / "raw"
+
+
+def get_interim_data_path(env="DATA_LOCAL_ROOT"):
+    """Returns the path to the 'interim' data directory containing in-production data."""
+
+    return get_root_dir(env) / "interim"
+
+
+def get_processed_data_path(env="DATA_LOCAL_ROOT"):
+    """Returns the path to the 'processed' data directory containing fully-processed data."""
+
+    return get_root_dir(env) / "processed"
+
+
+def get_fars_path(env="DATA_LOCAL_ROOT"):
+    """Returns the path to the top-level FARS directory."""
+
+    return get_root_dir(env) / os.getenv("FARS_KEY")
+
+
+def get_S3_path(bucket):
+    """Returns a list of folders in an S3 bucket."""
+
+    raise NotImplementedError("get_S3_paths")
