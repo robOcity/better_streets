@@ -125,7 +125,6 @@ def main():
             "COUNTY",
             "STATE",
             "CITY",
-            "YEAR",
             "MONTH",
             "DAY",
             "HOUR",
