@@ -13,8 +13,6 @@ import utils
 def get_command():
     """Return the command from the user."""
 
-    # TODO cleanup
-    print("In get_command()")
     cmd = ""
     while cmd not in ["L", "A", "Q"]:
         cmd = input("\nL - [L]ocal\nA - [A]WS\nQ - [Q]uit\nCommand: ")[
@@ -83,8 +81,6 @@ def main():
         os.getenv("DATA_S3_BUCKET") is not None
     ), "Environment variable with the root data directory has not been set"
 
-    # TODO clean-up
-    print("Main before while")
     while True:
         cmd = get_command()
         if cmd == "L":
@@ -116,6 +112,7 @@ def main():
 
     # join each pair together
     print("\nProcessing Directories")
+    # TODO use map reduce rather than looping
     for _dir in dirs:
         # read in csv data and keep columns common to all years
         accident_df = utils.read_csv(
