@@ -175,31 +175,18 @@ def main():
     for _dir in dirs:
         # read in csv data and keep columns common to all years
         accident_df = read_csv(str(Path(_dir).joinpath("ACCIDENT.CSV"))).select(
-            "WEATHER",
-            "MILEPT",
-            "HARM_EV",
-            "COUNTY",
-            "DAY",
-            "RAIL",
-            "NOT_HOUR",
-            "NOT_MIN",
-            "CITY",
             "ST_CASE",
-            "DAY_WEEK",
-            "PERSONS",
-            "MINUTE",
-            "HOUR",
-            "ARR_MIN",
+            "COUNTY",
+            "STATE",
+            "CITY",
             "YEAR",
-            "SP_JUR",
             "MONTH",
-            "ARR_HOUR",
-            "DRUNK_DR",
-            "REL_ROAD",
-            "VE_FORMS",
+            "DAY",
+            "HOUR",
+            "MINUTE",
+            "DAY_WEEK",
             "LGT_COND",
             "FATALS",
-            "STATE",
         )
         accident_df = fix_spaces_in_column_names(accident_df)
         accident_dfs.append(accident_df)
@@ -260,7 +247,10 @@ def main():
     try:
         # find columns common to all years
         accident_common_cols = find_common_set_of_column_names(accident_dfs)
+        print("Common ACCIDENT.CSV Columns:", accident_common_cols)
+
         acc_aux_common_cols = find_common_set_of_column_names(acc_aux_dfs)
+        print("Common ACC_AUX.CSV Columns:", acc_aux_common_cols)
 
         # append combined accident files for all years
         all_acc_df = reduce(DataFrame.unionByName, acc_dfs)
@@ -281,75 +271,6 @@ def main():
     )
     print(f"output_path={output_path}")
     all_acc_df.write.csv(output_path, mode="overwrite", header=True)
-
-    # read in pedestrain / cyclist data for recent years with consistent data labeling
-    recent_pb_df = read_csv(
-        [
-            "../../Data/external/FARS/CSV/FARS2014NationalCSV/PBTYPE.CSV",
-            "../../Data/external/FARS/CSV/FARS2015NationalCSV/PBTYPE.CSV",
-            "../../Data/external/FARS/CSV/FARS2016NationalCSV/PBTYPE.CSV",
-            "../../Data/external/FARS/CSV/FARS2017NationalCSV/PBTYPE.CSV",
-            "../../Data/external/FARS/CSV/FARS2018NationalCSV/PBTYPE.CSV",
-        ]
-    )
-    recent_pb_df = fix_spaces_in_column_names(recent_pb_df)
-
-    # read in accident data for recent years and columns common to all years
-    recent_accident_df = read_csv(
-        [
-            "../../Data/external/FARS/CSV/FARS2014NationalCSV/ACCIDENT.CSV",
-            "../../Data/external/FARS/CSV/FARS2015NationalCSV/ACCIDENT.CSV",
-            "../../Data/external/FARS/CSV/FARS2016NationalCSV/ACCIDENT.CSV",
-            "../../Data/external/FARS/CSV/FARS2017NationalCSV/ACCIDENT.CSV",
-            "../../Data/external/FARS/CSV/FARS2018NationalCSV/ACCIDENT.CSV",
-        ]
-    ).select(
-        "WEATHER",
-        "MILEPT",
-        "HARM_EV",
-        "COUNTY",
-        "DAY",
-        "RAIL",
-        "NOT_HOUR",
-        "NOT_MIN",
-        "CITY",
-        "ST_CASE",
-        "DAY_WEEK",
-        "PERSONS",
-        "MINUTE",
-        "HOUR",
-        "ARR_MIN",
-        "YEAR",
-        "SP_JUR",
-        "MONTH",
-        "ARR_HOUR",
-        "DRUNK_DR",
-        "REL_ROAD",
-        "VE_FORMS",
-        "LGT_COND",
-        "FATALS",
-        "STATE",
-    )
-    recent_accident_df = fix_spaces_in_column_names(recent_accident_df)
-    print(
-        f"\nNumber of motor vehicle accidents involving ped / cyclists (2014-2018): {recent_accident_df.count():,}"
-    )
-
-    # join the dataframes where many peds/cyclists can be involved in a single accident
-    join_expression = recent_accident_df["ST_CASE"] == recent_pb_df["ST_CASE"]
-    pb_acc_df = recent_pb_df.join(
-        recent_accident_df, join_expression, how="left_outer"
-    )
-    print(
-        f"\nNumber of pedestrians & cyclists hit (2014-2018): {pb_acc_df.count():,}"
-    )
-
-    # save resulting dataframe for analysis
-    output_path = str(
-        get_interim_data_path().joinpath("ped_bike_accidents_2014_to_2018.csv")
-    )
-    print(f"output_path={output_path}")
-    recent_accident_df.write.csv(output_path, mode="overwrite", header=True)
 
 
 if __name__ == "__main__":
