@@ -143,59 +143,6 @@ def main():
 
     spark = create_spark_session()
 
-    # read in pedestrain / cyclist data for recent years with consistent data labeling
-    recent_pb_df = read_csv(
-        [
-            "../../Data/external/FARS/CSV/FARS2014NationalCSV/PBTYPE.CSV",
-            "../../Data/external/FARS/CSV/FARS2015NationalCSV/PBTYPE.CSV",
-            "../../Data/external/FARS/CSV/FARS2016NationalCSV/PBTYPE.CSV",
-            "../../Data/external/FARS/CSV/FARS2017NationalCSV/PBTYPE.CSV",
-            "../../Data/external/FARS/CSV/FARS2018NationalCSV/PBTYPE.CSV",
-        ]
-    )
-    recent_pb_df = fix_spaces_in_column_names(recent_pb_df)
-
-    # read in accident data for recent years and columns common to all years
-    recent_accident_df = read_csv(
-        [
-            "../../Data/external/FARS/CSV/FARS2014NationalCSV/ACCIDENT.CSV",
-            "../../Data/external/FARS/CSV/FARS2015NationalCSV/ACCIDENT.CSV",
-            "../../Data/external/FARS/CSV/FARS2016NationalCSV/ACCIDENT.CSV",
-            "../../Data/external/FARS/CSV/FARS2017NationalCSV/ACCIDENT.CSV",
-            "../../Data/external/FARS/CSV/FARS2018NationalCSV/ACCIDENT.CSV",
-        ]
-    ).select(
-        "WEATHER",
-        "MILEPT",
-        "HARM_EV",
-        "COUNTY",
-        "DAY",
-        "RAIL",
-        "NOT_HOUR",
-        "NOT_MIN",
-        "CITY",
-        "ST_CASE",
-        "DAY_WEEK",
-        "PERSONS",
-        "MINUTE",
-        "HOUR",
-        "ARR_MIN",
-        "YEAR",
-        "SP_JUR",
-        "MONTH",
-        "ARR_HOUR",
-        "DRUNK_DR",
-        "REL_ROAD",
-        "VE_FORMS",
-        "LGT_COND",
-        "FATALS",
-        "STATE",
-    )
-    recent_accident_df = fix_spaces_in_column_names(recent_accident_df)
-    print(
-        f"\nNumber of motor vehicle accidents involving ped / cyclists (2014-2018): {recent_accident_df.count():,}"
-    )
-
     # join the dataframes where many peds/cyclists can be involved in a single accident
     join_expression = recent_accident_df["ST_CASE"] == recent_pb_df["ST_CASE"]
     pb_acc_df = recent_pb_df.join(
@@ -316,6 +263,59 @@ def main():
             f"Use common columns in ACC_AUX.CSV files:\n{acc_aux_common_cols}",
             file=sys.stderr,
         )
+
+    # read in pedestrain / cyclist data for recent years with consistent data labeling
+    recent_pb_df = read_csv(
+        [
+            "../../Data/external/FARS/CSV/FARS2014NationalCSV/PBTYPE.CSV",
+            "../../Data/external/FARS/CSV/FARS2015NationalCSV/PBTYPE.CSV",
+            "../../Data/external/FARS/CSV/FARS2016NationalCSV/PBTYPE.CSV",
+            "../../Data/external/FARS/CSV/FARS2017NationalCSV/PBTYPE.CSV",
+            "../../Data/external/FARS/CSV/FARS2018NationalCSV/PBTYPE.CSV",
+        ]
+    )
+    recent_pb_df = fix_spaces_in_column_names(recent_pb_df)
+
+    # read in accident data for recent years and columns common to all years
+    recent_accident_df = read_csv(
+        [
+            "../../Data/external/FARS/CSV/FARS2014NationalCSV/ACCIDENT.CSV",
+            "../../Data/external/FARS/CSV/FARS2015NationalCSV/ACCIDENT.CSV",
+            "../../Data/external/FARS/CSV/FARS2016NationalCSV/ACCIDENT.CSV",
+            "../../Data/external/FARS/CSV/FARS2017NationalCSV/ACCIDENT.CSV",
+            "../../Data/external/FARS/CSV/FARS2018NationalCSV/ACCIDENT.CSV",
+        ]
+    ).select(
+        "WEATHER",
+        "MILEPT",
+        "HARM_EV",
+        "COUNTY",
+        "DAY",
+        "RAIL",
+        "NOT_HOUR",
+        "NOT_MIN",
+        "CITY",
+        "ST_CASE",
+        "DAY_WEEK",
+        "PERSONS",
+        "MINUTE",
+        "HOUR",
+        "ARR_MIN",
+        "YEAR",
+        "SP_JUR",
+        "MONTH",
+        "ARR_HOUR",
+        "DRUNK_DR",
+        "REL_ROAD",
+        "VE_FORMS",
+        "LGT_COND",
+        "FATALS",
+        "STATE",
+    )
+    recent_accident_df = fix_spaces_in_column_names(recent_accident_df)
+    print(
+        f"\nNumber of motor vehicle accidents involving ped / cyclists (2014-2018): {recent_accident_df.count():,}"
+    )
 
     # show the number of records
     print(
