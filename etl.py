@@ -113,26 +113,28 @@ def main():
         os.getenv("DATA_S3_BUCKET") is not None
     ), "Environment variable with the root data directory has not been set"
 
-    data_path = ""
+    raw_fars_data_path = ""
 
     while True:
         cmd = get_command()
         if cmd == "L":
-            data_path = Path(os.getenv("DATA_LOCAL_ROOT")) / os.getenv(
+            raw_fars_data_path = Path(os.getenv("DATA_LOCAL_ROOT")) / os.getenv(
                 "FARS_KEY"
             )
-            print(f"data_path: {data_path}")
+            print(f"raw_fars_data_path: {raw_fars_data_path}")
             city_lat_lon_key = os.getenv("CITY_LAT_LON_KEY")
             fars_key = os.getenv("FARS_KEY")
             make_filenames_case_consistent
-            print(f"\nRunning locally using data from {data_path}\n")
+            print(
+                f"\nRunning locally using FARS data from {raw_fars_data_path}\n"
+            )
             break
 
         elif cmd == "A":
-            data_path = Path(os.getenv("DATA_S3_BUCKET")) / os.getenv(
+            raw_fars_data_path = Path(os.getenv("DATA_S3_BUCKET")) / os.getenv(
                 "FARS_KEY"
             )
-            print("\nRunning on AWS using data from {data_path}\n")
+            print("\nRunning on AWS using data from {raw_fars_data_path}\n")
             raise NotImplementedError()
 
         elif cmd == "Q":
@@ -144,11 +146,11 @@ def main():
     # read in pedestrain / cyclist data for recent years with consistent data labeling
     recent_pb_df = read_csv(
         [
-            "../../Data/FARS/CSV/FARS2014NationalCSV/PBTYPE.CSV",
-            "../../Data/FARS/CSV/FARS2015NationalCSV/PBTYPE.CSV",
-            "../../Data/FARS/CSV/FARS2016NationalCSV/PBTYPE.CSV",
-            "../../Data/FARS/CSV/FARS2017NationalCSV/PBTYPE.CSV",
-            "../../Data/FARS/CSV/FARS2018NationalCSV/PBTYPE.CSV",
+            "../../Data/external/FARS/CSV/FARS2014NationalCSV/PBTYPE.CSV",
+            "../../Data/external/FARS/CSV/FARS2015NationalCSV/PBTYPE.CSV",
+            "../../Data/external/FARS/CSV/FARS2016NationalCSV/PBTYPE.CSV",
+            "../../Data/external/FARS/CSV/FARS2017NationalCSV/PBTYPE.CSV",
+            "../../Data/external/FARS/CSV/FARS2018NationalCSV/PBTYPE.CSV",
         ]
     )
     recent_pb_df = fix_spaces_in_column_names(recent_pb_df)
@@ -156,11 +158,11 @@ def main():
     # read in accident data for recent years and columns common to all years
     recent_accident_df = read_csv(
         [
-            "../../Data/FARS/CSV/FARS2014NationalCSV/ACCIDENT.CSV",
-            "../../Data/FARS/CSV/FARS2015NationalCSV/ACCIDENT.CSV",
-            "../../Data/FARS/CSV/FARS2016NationalCSV/ACCIDENT.CSV",
-            "../../Data/FARS/CSV/FARS2017NationalCSV/ACCIDENT.CSV",
-            "../../Data/FARS/CSV/FARS2018NationalCSV/ACCIDENT.CSV",
+            "../../Data/external/FARS/CSV/FARS2014NationalCSV/ACCIDENT.CSV",
+            "../../Data/external/FARS/CSV/FARS2015NationalCSV/ACCIDENT.CSV",
+            "../../Data/external/FARS/CSV/FARS2016NationalCSV/ACCIDENT.CSV",
+            "../../Data/external/FARS/CSV/FARS2017NationalCSV/ACCIDENT.CSV",
+            "../../Data/external/FARS/CSV/FARS2018NationalCSV/ACCIDENT.CSV",
         ]
     ).select(
         "WEATHER",
@@ -204,12 +206,14 @@ def main():
     )
 
     # loop over directories with accident.csv and acc_aux.csv files
-    dirs = find_dirs_with_both_files("ACCIDENT.CSV", "ACC_AUX.CSV", data_path)
+    dirs = find_dirs_with_both_files(
+        "ACCIDENT.CSV", "ACC_AUX.CSV", raw_fars_data_path
+    )
     count = 1
     accident_dfs, acc_aux_dfs, acc_dfs = [], [], []
 
     # join each pair together
-    print("Processing Directories")
+    print("\nProcessing Directories")
     for _dir in dirs:
         # read in csv data and keep columns common to all years
         accident_df = read_csv(str(Path(_dir).joinpath("ACCIDENT.CSV"))).select(
@@ -313,10 +317,12 @@ def main():
             file=sys.stderr,
         )
 
-    # do some analysis!!
+    # show the number of records
     print(
         f"\nNumber of motor vehicle accidents (1982-2018): {all_acc_df.count():,}"
     )
+
+    # save resulting dataframe for analysis
 
 
 if __name__ == "__main__":
