@@ -4,25 +4,25 @@
 
 In 2018, Bicycling magazine rated Seattle the countries best city for cyclists.  Denver, the city I live in, dropped three positions to 14.  Cyclist safety is an [issue](https://denverite.com/2019/07/31/traffic-deaths-are-having-a-moment-in-denver-its-the-latest-in-a-scroll-of-preventable-deaths/) here in Denver.  I count my self lucky that I am able to ride my bike to work.  Yet, with cyclist fatalities in the news, I wondered how do Denver and Seattle compare in terms of cyclist and pedestrian fatalities?  And, how have those trends changed over time?   This project aims to investigate these questions.
 
-
-
 ## Goals
 
 1. Analyze the number of fatal traffic accidents per capita, how they have varied over time, and compare the rates in Denver, Colorado and Seattle, Washington.  
 
 1. Investigate the number of pedestrian and bicycle accidents that occur in Denver and Seattle.  
- 
 
-
-
-## Pedestrain and cyclist fatality
+## Pedestrain and cyclist fatalities in Denver, CO and Seattle, WA
 
 TODO - results and discussion
 
-
 ## Running
 
-TODO - outline steps
+1. Perform ETL by running `python etl.py` from the project directory.
+
+2. Analyze the data by running `python analysis.py`. 
+
+## Data Set
+
+TODO - Add link to public S3 bucket.
 
 ## Data Sources
 
