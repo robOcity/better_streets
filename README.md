@@ -22,6 +22,28 @@ For this project, I choose to use [PySpark](https://spark.apache.org/docs/latest
 
 1. **100 people need to access the database** - Clearly, this scenario requires an enterprise-level database.  [AWS Redshift](https://aws.amazon.com/redshift/) would be one possibility, especially if the users are primarily analysts in need of an Online Analytical Processing system.  Redshift's columnar data reads and writes help to speed analytical workflows.  On the other hand, if transaction processing is the focus of the system, where rows are being processed, then a relational database solution would be the right choice, such as [Amazon Relational Database Service (RDS)](https://aws.amazon.com/rds/).
 
+## Extract, Transform and Load Pipeline Steps
+
+The pipeline code performs the following steps:
+
+1. Read in the environment variable that defines where data are stored.
+
+1. Determine if the user is running locally or on AWS.  Currently, only the local option is working.
+
+1. Loop over directories holding the annual sets of FARS data.  The goal is to allow Spark to make _narrow_ transformations that are optimally run in parallel.  I intend to replace the for-loop with a call to `reduce`.  Hence, the `TODO` comment signally my intention.
+
+1. For each directory, join the accident.csv file to the acc_aux.csv file.  The acc_aux.csv contains consistently coded data, whereas the meaning of codes in the accident file has changed over the years.  So, I select a minimal set of columns from the accident table, and a maximal set from the acc_aux table.
+
+1. Extra spaces in the column names found in a few CSV files cause problems during development.  A call to `fix_spaces_in_column_names()` removes them.  
+
+1. Joining the accident and acc_aux tables using the ST_CASE column combines the dataframes.  Data elements in these two tables are a one-to-one match, so I use an inner (default) join.
+
+1. The accident table has changed over the years.  Inconsistent column names caused the pipeline to crash.  Putting this error-prone step in a try / except block, where I find the set of common columns.
+
+1. Combining the dataframes using reduce into one using shared column names: `all_acc_df = reduce(DataFrame.unionByName, acc_dfs)`.
+
+1. Writing the `all_acc_df` dataframe to disk as a partitioned CSV file, so that it is ready for analysis.  Having many files allows Spark to perform this step in parallel, improving runtimes and enabling the workflow to scale.
+
 ## Requirements
 
 1. Analyze over 1,000,000 rows of data.  Here I ingest 1,349,445 rows of [FARS](https://www.nhtsa.gov/research-data/fatality-analysis-reporting-system-fars) data spanning a 36 year period.  Every row represents a fatal motor vehicle accident.  
