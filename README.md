@@ -34,6 +34,8 @@ In 2018, Bicycling magazine rated Seattle the countries best city for cyclists. 
     # Fatal Accidents 1982 to 1018: 1,349,445
 ```
 
+1. Provide a [data dictionary](./data-dictionary.md) for the project.
+
 1. Use at least two data "flavors".  FARS data relies on Geographic Location Codes ([FRPP GLC](https://www.gsa.gov/reference/geographic-locator-codes/glcs-for-the-us-and-us-territories)) to identify the state, county and city where the accident occurred.  The General Services Administration provides these data as Excel files.  To meet the requirements of this project, I converted the spreadsheet to CSV, then converted the [CSV to JSON](https://csvjson.com/csv2json), and used the JSON in my analysis.  
 
     ```python
