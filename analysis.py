@@ -1,6 +1,7 @@
 import utils
 from pathlib import Path
 from dotenv import load_dotenv
+from pyspark.sql import functions as F
 
 
 def main():
@@ -39,7 +40,7 @@ def main():
     location.createOrReplaceTempView("location")
 
     # join the GLC and FARS dataframes
-    accidents_with_location = spark.sql(
+    acc_w_loc = spark.sql(
         """
         SELECT * 
         FROM accidents a
@@ -49,24 +50,20 @@ def main():
         a.CITY = l.City_Code)
         """
     )
-    accidents_with_location.show(5)
-    awl_path = str(
-        utils.get_interim_data_path() / "accidents_with_location.csv"
-    )
-    # utils.write_csv(accidents_with_location, awl_path)
-    accidents_with_location.createOrReplaceTempView("accidents_with_location")
+    acc_w_loc.show(5)
 
     # accidents per year in denver, co and seattle, wa
-    # TODO - get query working or use api
-    spark.sql(
-        f"""
-        SELECT YEAR, City_Name, State_Name
-        FROM accidents_with_location
-        WHERE State_Code = 53
-        """
+    acc_w_loc.select("YEAR", "City_Name", "FATALS").filter(
+        F.lower(acc_w_loc.City_Name).contains("denver")
     ).show()
 
     # TODO per capita accidents per year in denver, co and seattle, wa
+
+    # TODO uncomment to save
+    # awl_path = str(
+    #     utils.get_interim_data_path() / "accidents_with_location.csv"
+    # )
+    # utils.write_csv(accidents_with_location, awl_path)
 
 
 if __name__ == "__main__":
