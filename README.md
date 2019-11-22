@@ -60,7 +60,6 @@ In 2018, Bicycling magazine rated Seattle the countries best city for cyclists. 
     # only showing top 5 rows
     ```
 
-    
 
 ## Pedestrain and cyclist fatalities in Denver, CO and Seattle, WA
 
@@ -72,9 +71,13 @@ TODO - results and discussion
 
 2. Analyze the data by running `python analysis.py`.
 
-## Data Set
+## Access to Data
 
-TODO - Add link to public S3 bucket.
+The data for this project are in the traffic-safety bucket on AWS S3 located in the `us-west-2` data center.  There are two ways to access this data:
+
+1. Browsing to `http://traffic-safety.s3-us-west-2.amazonaws.com/`.  Currently, only raw XML is displayed.  Hopefully, I will be able to improve that soon.  
+
+1. Using the AWS Command Line Interface by installing `conda install -c conda-forge awscli`.  Configuring your settings if need be, and then, running `aws s3 ls traffic-safety --recursive`.  
 
 ## Data Sources
 
