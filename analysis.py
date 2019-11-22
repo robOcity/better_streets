@@ -59,10 +59,11 @@ def main():
 
     location.createOrReplaceTempView("location")
 
-    # join the GLC and FARS dataframes
-    acc_w_loc = spark.sql(
+    # join the GLC and FARS dataframes and limit
+    # scope to denver/seattle
+    all_fatalities = spark.sql(
         """
-        SELECT a.YEAR, l.City_Name, sum(a.FATALS) 
+        SELECT a.YEAR as Year, l.City_Name, sum(a.FATALS) as All_Fatalities
         FROM accidents a
         JOIN location l
         ON (a.STATE = l.State_Code AND
@@ -74,22 +75,57 @@ def main():
         ORDER BY a.YEAR
         """
     )
-    acc_w_loc.show(5)
+    all_fatalities.show(5)
+    # +----+---------+--------------+
+    # |Year|City_Name|All_Fatalities|
+    # +----+---------+--------------+
+    # |1982|  SEATTLE|            53|
+    # |1982|   DENVER|            68|
+    # |1983|  SEATTLE|            50|
+    # |1983|   DENVER|            55|
+    # |1984|  SEATTLE|            45|
+    # +----+---------+--------------+
+    # only showing top 5 rows
+
+    # save the results
+    all_fatalities_path = str(
+        utils.get_interim_data_path() / "all_fatalities.csv"
+    )
+    utils.write_csv(all_fatalities, all_fatalities_path)
+
+    # now just pedestrian and bicycle accidents
+    ped_bike_fatalities = spark.sql(
+        """
+        SELECT a.YEAR as Year, l.City_Name, sum(a.FATALS) as Ped_Bike_Fatalities
+        FROM accidents a
+        JOIN location l
+        ON (a.STATE = l.State_Code AND
+        a.COUNTY = l.County_Code AND
+        a.CITY = l.City_Code)
+        WHERE ((l.State_Code = '08' AND l.City_Code = '0600') OR
+        (l.State_Code = '53' AND l.City_Code = '1960')) AND
+        (a.A_PED = 1 OR a.A_PEDAL = 1)
+        GROUP BY a.YEAR, l.City_Name
+        ORDER BY a.YEAR
+        """
+    )
+    ped_bike_fatalities.show(5)
     # +----+---------+-----------+
     # |YEAR|City_Name|sum(FATALS)|
     # +----+---------+-----------+
-    # |1982|  SEATTLE|         53|
-    # |1982|   DENVER|         68|
-    # |1983|  SEATTLE|         50|
-    # |1983|   DENVER|         55|
-    # |1984|  SEATTLE|         45|
+    # |1982|  SEATTLE|         17|
+    # |1982|   DENVER|         24|
+    # |1983|  SEATTLE|         20|
+    # |1983|   DENVER|         13|
+    # |1984|  SEATTLE|         16|
     # +----+---------+-----------+
     # only showing top 5 rows
 
-    acc_w_loc_path = str(
-        utils.get_interim_data_path() / "accidents_with_location.csv"
+    # save the results
+    ped_bike_fatalities_path = str(
+        utils.get_interim_data_path() / "ped_bike_fatalities.csv"
     )
-    utils.write_csv(acc_w_loc, acc_w_loc_path)
+    utils.write_csv(ped_bike_fatalities, ped_bike_fatalities_path)
 
 
 if __name__ == "__main__":
