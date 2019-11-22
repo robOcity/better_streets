@@ -42,7 +42,6 @@ To meet these goals, I am relying on the follow data sets.
 
 ## Files
 
-TODO - Document file and what they do
 
 ## Citations
 
