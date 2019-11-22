@@ -127,6 +127,8 @@ To meet these goals, I am relying on the follow data sets.
 
     - [2018 FARS/CRSS Pedestrian Bicyclist Crash, Typing Manual, A Guide for Coders Using the FARS/CRSS Ped/Bike Typing Tool Revision Date: June 2019 (NHTSA)](https://crashstats.nhtsa.dot.gov/Api/Public/ViewPublication/812809)
 
+    ![FARS Data File Relations](./images/FARS-data-files-relations.png) - The relations between the FARS data files, type of data they represent, and how to the data elements that used to join them.  
+
 * [GLCs for the U.S. and U.S. Territories](https://www.gsa.gov/reference/geographic-locator-codes/glcs-for-the-us-and-us-territories) - Source of Geographic Location Codes provided by the U.S. General Services Administration.  
 
 ## Files
