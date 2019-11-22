@@ -18,7 +18,7 @@ TODO - results and discussion
 
 1. Perform ETL by running `python etl.py` from the project directory.
 
-2. Analyze the data by running `python analysis.py`. 
+2. Analyze the data by running `python analysis.py`.
 
 ## Data Set
 
@@ -60,4 +60,4 @@ To meet these goals, I am relying on the follow data sets.
 
 * [Cookiecutter Data Science](https://drivendata.github.io/cookiecutter-data-science/) - Adopting the data organization scheme from this standardized approach to datascience projects.
 
-* [CSVJSON - Online tool to convert your CSV or TSV formatted data to JSON](Online tool to convert your CSV or TSV formatted data to JSON.) - Converted FPRR_GLC data set from CSV to JSON.
+* [CSV to JSON - Online tool to convert your CSV or TSV formatted data to JSON.](https://csvjson.com/csv2json) - Converted FPRR_GLC data set from CSV to JSON.
