@@ -21,7 +21,7 @@ Description: FARS is a nationwide census providing NHTSA, Congress and the Ameri
 
 ## FARS - Fatality Analysis Reporting System - Select ACC_AUX table elements
 
-Description: FARS is a nationwide census providing NHTSA, Congress and the American public yearly data regarding fatal injuries suffered in motor vehicle traffic crashes. Source: [Fatality Analysis Reporting System (FARS)  Analytical User’s Manual, 1975-2018](https://crashstats.nhtsa.dot.gov/Api/Public/ViewPublication/812827).  
+Description: FARS is a nationwide census providing NHTSA, Congress and the American public yearly data regarding fatal injuries suffered in motor vehicle traffic crashes. Source: [Fatality Analysis Reporting System (FARS)  Analytical User’s Manual, 1975-2018](https://crashstats.nhtsa.dot.gov/Api/Public/ViewPublication/812827) and [2018 FARS/CRSS Pedestrian Bicyclist Crash, Typing Manual, A Guide for Coders Using the FARS/CRSS Ped/Bike Typing Tool Revision Date: June 2019 (NHTSA)](https://crashstats.nhtsa.dot.gov/Api/Public/ViewPublication/812809)
 
 
 1. ST_CASE - The unique case number assigned to each crash.
