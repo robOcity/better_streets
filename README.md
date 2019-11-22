@@ -65,7 +65,41 @@ In 2018, Bicycling magazine rated Seattle the countries best city for cyclists. 
 
 ## Pedestrain and cyclist fatalities in Denver, CO and Seattle, WA
 
-TODO - results and discussion
+The query creating a table of preliminary results of fatal accidents in Denver, CO and Seattle, WA.  Results are saved as a set of CSV files that [PySpark](https://spark.apache.org/docs/latest/api/python/index.html#) reads concurrently to improve performance.  
+
+```python
+# join the GLC and FARS dataframes
+    acc_w_loc = spark.sql(
+        """
+        SELECT a.YEAR, l.City_Name, sum(a.FATALS) 
+        FROM accidents a
+        JOIN location l
+        ON (a.STATE = l.State_Code AND
+        a.COUNTY = l.County_Code AND
+        a.CITY = l.City_Code)
+        WHERE (l.State_Code = '08' AND l.City_Code = '0600') OR
+        (l.State_Code = '53' AND l.City_Code = '1960')
+        GROUP BY a.YEAR, l.City_Name
+        ORDER BY a.YEAR
+        """
+    )
+    acc_w_loc.show(5)
+    # +----+---------+-----------+
+    # |YEAR|City_Name|sum(FATALS)|
+    # +----+---------+-----------+
+    # |1982|  SEATTLE|         53|
+    # |1982|   DENVER|         68|
+    # |1983|  SEATTLE|         50|
+    # |1983|   DENVER|         55|
+    # |1984|  SEATTLE|         45|
+    # +----+---------+-----------+
+    # only showing top 5 rows
+
+    acc_w_loc_path = str(
+        utils.get_interim_data_path() / "accidents_with_location.csv"
+    )
+    utils.write_csv(acc_w_loc, acc_w_loc_path)
+```
 
 ## Running
 
