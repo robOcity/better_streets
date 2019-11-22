@@ -16,7 +16,9 @@ For this project, I choose to use [PySpark](https://spark.apache.org/docs/latest
 
 ## Scenarios
 
-1. **100x the amount of data** - I would continue to PySpark and use a subset of the data for development and testing, and only run the full data set once I had deployed the code to AWS EMR.  While continuing to store the data on AWS S3, I would experiment with using Parquet as a file storage format.  Its columnar access and fast read and write performance would shorten runtimes significantly.  
+1. **100x the amount of data** - I would continue to PySpark and use a subset of the data for development and testing, and only run the full data set once I had deployed the code to AWS EMR.  While continuing to store the data on AWS S3, I would experiment with using Parquet as a file storage format.  Its columnar access and fast read and write performance would shorten runtimes significantly.
+
+1. **Pipeline needs to be run daily at 7 AM** - An orchestration tool, like [Apache Airflow](https://airflow.apache.org/), that can run tasks on schedule is the change I would make in this scenario.  Orchestration evolving category, I would evaluate several before making a decision.
 
 
 ## Requirements
