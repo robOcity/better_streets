@@ -8,7 +8,59 @@ In 2018, Bicycling magazine rated Seattle the countries best city for cyclists. 
 
 1. Analyze the number of fatal traffic accidents per capita, how they have varied over time, and compare the rates in Denver, Colorado and Seattle, Washington.  
 
-1. Investigate the number of pedestrian and bicycle accidents that occur in Denver and Seattle.  
+1. Investigate the number of pedestrian and bicycle accidents that occur in Denver and Seattle.
+
+## Requirements
+
+1. Analyze over 1,000,000 rows of data.  Here I ingest 1,349,445 rows of [FARS](https://www.nhtsa.gov/research-data/fatality-analysis-reporting-system-fars) data spanning a 36 year period.  Every row represents a fatal motor vehicle accident.  
+
+```python
+# read in accident data
+    full_path = str(
+        utils.get_interim_data_path() / "all_accidents_1982_to_2018.csv"
+    )
+    accidents = utils.read_csv(full_path)
+
+    # convert column to integer
+    accidents = accidents.withColumn(
+        "FATALS", accidents["FATALS"].cast(T.IntegerType())
+    )
+
+    # prepare for analysis
+    accidents.createOrReplaceTempView("accidents")
+
+    # total number of accidents
+    print(f"\nFatal Accidents 1982 to 1018: {accidents.count():,}")
+    # Fatal Accidents 1982 to 1018: 1,349,445
+```
+
+1. Use at least two data "flavors".  FARS data relies on Geographic Location Codes ([FRPP GLC](https://www.gsa.gov/reference/geographic-locator-codes/glcs-for-the-us-and-us-territories)) to identify the state, county and city where the accident occurred.  The General Services Administration provides these data as Excel files.  To meet the requirements of this project, I converted the spreadsheet to CSV, then converted the [CSV to JSON](https://csvjson.com/csv2json), and used the JSON in my analysis.  
+
+    ```python
+    # read in geographic location codes as json
+    glc_path = str(
+        utils.get_external_data_path(
+            src_dir="FRPP_GLC", filename="FRPP_GLC_United_States.json"
+        )
+    )
+
+    location = spark.read.json(
+        glc_path, mode="FAILFAST", multiLine=True, allowNumericLeadingZero=True
+    )
+    location.show(5)
+    # +---------+--------------+------------+-----------+-----------+-----------------+-------------+----------+----------+---------+
+    # |City_Code|     City_Name|Country_Code|County_Code|County_Name|Date_Record_Added|Old_City_Name|State_Code|State_Name|Territory|
+    # +---------+--------------+------------+-----------+-----------+-----------------+-------------+----------+----------+---------+
+    # |     0010|     ABBEVILLE|         840|        067|      HENRY|                 |             |        01|   ALABAMA|        U|
+    # |     0050|   ALBERTVILLE|         840|        095|   MARSHALL|                 |             |        01|   ALABAMA|        U|
+    # |     0060|ALEXANDER CITY|         840|        123| TALLAPOOSA|                 |             |        01|   ALABAMA|        U|
+    # |     0070|    ALICEVILLE|         840|        107|    PICKENS|                 |             |        01|   ALABAMA|        U|
+    # |     0090|     ANDALUSIA|         840|        039|  COVINGTON|                 |             |        01|   ALABAMA|        U|
+    # +---------+--------------+------------+-----------+-----------+-----------------+-------------+----------+----------+---------+
+    # only showing top 5 rows
+    ```
+
+    
 
 ## Pedestrain and cyclist fatalities in Denver, CO and Seattle, WA
 
