@@ -25,16 +25,6 @@ def main():
     # total number of accidents
     print(f"Fatal Accidents 1982 to 1018: {accidents.count():,}")
 
-    # TODO cleanup after getting
-    # create dataframe of cities of interest
-    columns = ["City", "County", "State", "GNIS_ID"]
-    values = [
-        ("Denver", "Denver", "Colorado", "2410324"),
-        ("Seattle", "King", "Washington", "2411856"),
-    ]
-    city_df = spark.createDataFrame(values, columns)
-    city_df.show()
-
     # read in geographic location codes as json
     glc_path = str(
         utils.get_external_data_path(
