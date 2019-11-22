@@ -37,7 +37,7 @@ def read_csv(csv_full_path):
 def write_csv(df, path):
     """Saves the dataframe as partitioned CSV files under the specified path."""
 
-    df.csv(path, mode="overwrite", header=True)
+    df.write.csv(path, mode="overwrite", header=True)
 
 
 def get_root_dir(env="DATA_LOCAL_ROOT"):
