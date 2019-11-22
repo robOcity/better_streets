@@ -10,19 +10,19 @@ In 2018, Bicycling magazine rated Seattle the countries best city for cyclists. 
 
 1. Analyze the number of fatal traffic accidents per capita, how they have varied over time, and compare the rates in Denver, Colorado and Seattle, Washington.  
 
-1. Investigate the number of pedestrian and bicycle accidents that occur after dark in Denver and Seattle.  
-
-1. Plot the distribution of pedestrian and bicycle accidents as a function of speed limit.  
-
-
-
-## Per capita pedestrain and cyclist fatality rates
+1. Investigate the number of pedestrian and bicycle accidents that occur in Denver and Seattle.  
+ 
 
 
 
-## Does lighting conditions a factor?
+## Pedestrain and cyclist fatality
+
+TODO - results and discussion
 
 
+## Running
+
+TODO - outline steps
 
 ## Data Sources
 
@@ -39,6 +39,10 @@ To meet these goals, I am relying on the follow data sets.
 * [U.S. Population Data - 1969-2017](https://seer.cancer.gov/popdata/) - Historical population data for the U.S. at the county level.
 
 * [GLCs for the U.S. and U.S. Territories](https://www.gsa.gov/reference/geographic-locator-codes/glcs-for-the-us-and-us-territories) - Source of Geographic Location Codes provided by the U.S. General Services Administration.  
+
+## Files
+
+TODO - Document file and what they do
 
 ## Citations
 
