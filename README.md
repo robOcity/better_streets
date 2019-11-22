@@ -14,6 +14,11 @@ In 2018, Bicycling magazine rated Seattle the countries best city for cyclists. 
 
 For this project, I choose to use [PySpark](https://spark.apache.org/docs/latest/api/python/index.html) for ETL processing and [AWS S3](https://aws.amazon.com/s3/) for storing the input and output data.  PySpark allows me to develop on my local machine, possibly using a subset of the data, and then run the same code on [AWS EMR](https://aws.amazon.com/emr/) with minimal changes.  Beyond its ability to easily scale, PySpark offers a host of data sources (SQL, CSV, JSON, Parquet, ...).  AWS S3 provides economical storage, AWS services are built to integrate with it easily, and is easily accessible.  
 
+## Scenarios
+
+1. **100x the amount of data** - I would continue to PySpark and use a subset of the data for development and testing, and only run the full data set once I had deployed the code to AWS EMR.  While continuing to store the data on AWS S3, I would experiment with using Parquet as a file storage format.  Its columnar access and fast read and write performance would shorten runtimes significantly.  
+
+
 ## Requirements
 
 1. Analyze over 1,000,000 rows of data.  Here I ingest 1,349,445 rows of [FARS](https://www.nhtsa.gov/research-data/fatality-analysis-reporting-system-fars) data spanning a 36 year period.  Every row represents a fatal motor vehicle accident.  
