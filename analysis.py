@@ -32,23 +32,41 @@ def main():
         )
     )
 
-    # schema =
-    print(f"glc_path={glc_path}")
-    glc_df = spark.read.json(
+    location = spark.read.json(
         glc_path, mode="FAILFAST", multiLine=True, allowNumericLeadingZero=True
     )
-    glc_df.show(5)
+    location.show(5)
+    location.createOrReplaceTempView("location")
+
+    # join the GLC and FARS dataframes
+    accidents_with_location = spark.sql(
+        """
+        SELECT * 
+        FROM accidents a
+        JOIN location l
+        ON (a.STATE = l.State_Code AND
+        a.COUNTY = l.County_Code AND
+        a.CITY = l.City_Code)
+        """
+    )
+    accidents_with_location.show(5)
+    awl_path = str(
+        utils.get_interim_data_path() / "accidents_with_location.csv"
+    )
+    # utils.write_csv(accidents_with_location, awl_path)
+    accidents_with_location.createOrReplaceTempView("accidents_with_location")
 
     # accidents per year in denver, co and seattle, wa
+    # TODO - get query working or use api
     spark.sql(
+        f"""
+        SELECT YEAR, City_Name, State_Name
+        FROM accidents_with_location
+        WHERE State_Code = 53
         """
-    SELECT count(*) 
-    FROM accidents
-    WHERE STATE = 08 AND COUNTY = 031 AND CITY = 0600
-    """
     ).show()
 
-    # per capita accidents per year in denver, co and seattle, wa
+    # TODO per capita accidents per year in denver, co and seattle, wa
 
 
 if __name__ == "__main__":
