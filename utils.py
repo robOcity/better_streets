@@ -58,6 +58,12 @@ def get_interim_data_path(env="DATA_LOCAL_ROOT"):
     return get_root_dir(env) / "interim"
 
 
+def get_external_data_path(src_dir=None, filename=None, env="DATA_LOCAL_ROOT"):
+    """Returns the path to the 'interim' data directory containing in-production data."""
+
+    return get_root_dir(env) / "external" / src_dir / filename
+
+
 def get_processed_data_path(env="DATA_LOCAL_ROOT"):
     """Returns the path to the 'processed' data directory containing fully-processed data."""
 
