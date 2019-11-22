@@ -6,6 +6,8 @@ from pyspark.sql import types as T
 
 
 def main():
+    """Analysis of pedestrian and cyclist fatalities from 1982 to 2018."""
+
     env_path = Path(".") / ".env"
     load_dotenv(dotenv_path=env_path, verbose=True)
 
