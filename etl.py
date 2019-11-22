@@ -119,8 +119,6 @@ def main():
             str(Path(_dir).joinpath("ACCIDENT.CSV"))
         ).select(
             "ST_CASE",
-            "COUNTY",
-            "STATE",
             "CITY",
             "MONTH",
             "DAY",
@@ -128,7 +126,6 @@ def main():
             "MINUTE",
             "DAY_WEEK",
             "LGT_COND",
-            "FATALS",
         )
         accident_df = fix_spaces_in_column_names(accident_df)
         accident_dfs.append(accident_df)
@@ -178,9 +175,7 @@ def main():
         acc_aux_dfs.append(acc_aux_df)
 
         # join dataframes and drop duplicated columns after merge
-        acc_df = accident_df.join(acc_aux_df, on="ST_CASE").drop(
-            "STATE", "YEAR", "COUNTY", "FATALS",
-        )
+        acc_df = accident_df.join(acc_aux_df, on="ST_CASE")
         acc_dfs.append(acc_df)
 
         print(
