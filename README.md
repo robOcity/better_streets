@@ -20,8 +20,7 @@ For this project, I choose to use [PySpark](https://spark.apache.org/docs/latest
 
 1. **Pipeline needs to be run daily at 7 AM** - An orchestration tool, like [Apache Airflow](https://airflow.apache.org/), that can run tasks on schedule is the change I would make in this scenario.  Orchestration evolving category, I would evaluate several before making a decision.
 
-1. **100 people need to access the database** - Clearly, this scenario requires an enterprise-level database.  [AWS Redshift](https://aws.amazon.com/redshift/) would be one possibility, especially if the users are primarily analysts in need of an Online Analytical Processing system.  Redshift's columnar data reads and writes help to speed analytical workflows.  On the other hand, if transaction processing is the focus of the system, where rows of data are what is processed, then a relational database solution would be the right choice, such as [Amazon Relational Database Service (RDS)](https://aws.amazon.com/rds/).
-
+1. **100 people need to access the database** - Clearly, this scenario requires an enterprise-level database.  [AWS Redshift](https://aws.amazon.com/redshift/) would be one possibility, especially if the users are primarily analysts in need of an Online Analytical Processing system.  Redshift's columnar data reads and writes help to speed analytical workflows.  On the other hand, if transaction processing is the focus of the system, where rows are being processed, then a relational database solution would be the right choice, such as [Amazon Relational Database Service (RDS)](https://aws.amazon.com/rds/).
 
 ## Requirements
 
