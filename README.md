@@ -38,9 +38,7 @@ To meet these goals, I am relying on the follow data sets.
 
 * [U.S. Population Data - 1969-2017](https://seer.cancer.gov/popdata/) - Historical population data for the U.S. at the county level.
 
-* [Lat/Lon - Seattle, WA](https://www.latlong.net/place/seattle-wa-usa-2655.html)]
-
-* [Lat/Lon - Denver, CO](https://www.latlong.net/place/seattle-wa-usa-2655.html)]
+* [GLCs for the U.S. and U.S. Territories](https://www.gsa.gov/reference/geographic-locator-codes/glcs-for-the-us-and-us-territories) - Source of Geographic Location Codes provided by the U.S. General Services Administration.  
 
 ## Citations
 
@@ -52,4 +50,6 @@ To meet these goals, I am relying on the follow data sets.
 
 * [Road Mileage - VMT - Lane Miles, 1900 - 2017 (FHWA)](https://www.fhwa.dot.gov/policyinformation/statistics/2017/pdf/vmt421c.pdf) - Vehicle miles traveled is growing rapidly in the US.  The growth in milage of roads is modest by comparison.
 
-* [Cookiecutter Data Science](https://drivendata.github.io/cookiecutter-data-science/) - Adopting the data organization scheme from this standardized approach to datascience projects.  
+* [Cookiecutter Data Science](https://drivendata.github.io/cookiecutter-data-science/) - Adopting the data organization scheme from this standardized approach to datascience projects.
+
+* [CSVJSON - Online tool to convert your CSV or TSV formatted data to JSON](Online tool to convert your CSV or TSV formatted data to JSON.) - Converted FPRR_GLC data set from CSV to JSON.
