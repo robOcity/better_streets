@@ -2,7 +2,7 @@
 
 ## Motivation
 
-In 2018, Bicycling magazine rated Seattle the countries best city for cyclists.  Denver, the city I live in, dropped three positions to 14.  Cyclist safety is an [issue](https://denverite.com/2019/07/31/traffic-deaths-are-having-a-moment-in-denver-its-the-latest-in-a-scroll-of-preventable-deaths/) here in Denver.  I count my self lucky that I am able to ride my bike to work.  Yet, with cyclist fatalities in the news, I wondered how do Denver and Seattle compare in terms of cyclist and pedestrian fatalities?  And, how have those trends changed over time?   This project aims to investigate these !questions.
+In 2018, Bicycling magazine rated Seattle the countries best city for cyclists.  Denver, the city I live in, dropped three positions to 14.  Cyclist safety is an [issue](https://denverite.com/2019/07/31/traffic-deaths-are-having-a-moment-in-denver-its-the-latest-in-a-scroll-of-preventable-deaths/) here in Denver.  I count my self lucky that I am able to ride my bike to work.  Yet, with cyclist fatalities in the news, I wondered how do Denver and Seattle compare in terms of cyclist and pedestrian fatalities?  And, how have those trends changed over time?   This project aims to investigate these questions.
 
 
 
@@ -42,6 +42,11 @@ To meet these goals, I am relying on the follow data sets.
 
 ## Files
 
+* [etl.py](./etl.py) - Extracts, transforms and loads the traffic accident data.
+
+* [analysis.py](./analysis.py) - Analysis of pedestrian and cyclist fatalities from 1982 to 2018.
+
+* [utils.py](./utils.py) - Module of functions to start spark sessions, read and write data, and find data directory paths.  
 
 ## Citations
 
