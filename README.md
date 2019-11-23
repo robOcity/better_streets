@@ -68,9 +68,9 @@ The pipeline code performs the following steps:
     # Fatal Accidents 1982 to 1018: 1,349,445
 ```
 
-1. Provide a [data dictionary](./data-dictionary.md) for the project.
+2. Provide a [data dictionary](./data-dictionary.md) for the project.
 
-1. Use at least two data "flavors".  FARS data relies on Geographic Location Codes ([FRPP GLC](https://www.gsa.gov/reference/geographic-locator-codes/glcs-for-the-us-and-us-territories)) to identify the state, , and city where the accident occurred.  The General Services Administration provides these data as Excel files.  To meet the requirements of this project, I converted the spreadsheet to CSV, then converted the [CSV to JSON](https://csvjson.com/csv2json), and used the JSON in my analysis.  
+3. Use at least two data "flavors".  FARS data relies on Geographic Location Codes ([FRPP GLC](https://www.gsa.gov/reference/geographic-locator-codes/glcs-for-the-us-and-us-territories)) to identify the state, , and city where the accident occurred.  The General Services Administration provides these data as Excel files.  To meet the requirements of this project, I converted the spreadsheet to CSV, then converted the [CSV to JSON](https://csvjson.com/csv2json), and used the JSON in my analysis.  
 
     ```python
     # read in geographic location codes as json
@@ -94,6 +94,17 @@ The pipeline code performs the following steps:
     # |     0090|     ANDALUSIA|         840|        039|  COVINGTON|                 |             |        01|   ALABAMA|        U|
     # +---------+--------------+------------+-----------+-----------+-----------------+-------------+----------+----------+---------+
     # only showing top 5 rows
+    ```
+
+4. Have atleast data quality checks.  
+
+    Three data quality checks are in [`etl.py`](./etl.py) that assert every dataframe 1 or more rows.  
+
+    ```python
+    # data quality check #3
+    assert (
+        all_acc_df.count() > 0
+    ), "Combined accident and acc_aux table (all_acc_df) dataframe is empty!"
     ```
 
 ## Pedestrain and cyclist fatalities in Denver, CO and Seattle, WA

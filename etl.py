@@ -130,6 +130,11 @@ def main():
         accident_df = fix_spaces_in_column_names(accident_df)
         accident_dfs.append(accident_df)
 
+        # data quality check #1
+        assert (
+            accident_df.count() > 0
+        ), f"accident_df dataframe from {_dir} is empty!"
+
         # read in csv and only keep columns common to all years
         acc_aux_df = utils.read_csv(
             str(Path(_dir).joinpath("ACC_AUX.CSV"))
@@ -174,6 +179,11 @@ def main():
         acc_aux_df = fix_spaces_in_column_names(acc_aux_df)
         acc_aux_dfs.append(acc_aux_df)
 
+        # data quality check #2
+        assert (
+            acc_aux_df.count() > 0
+        ), f"acc_aux_df dataframe from {_dir} is empty!"
+
         # join dataframes and drop duplicated columns after merge
         acc_df = accident_df.join(acc_aux_df, on="ST_CASE")
         acc_dfs.append(acc_df)
@@ -203,6 +213,11 @@ def main():
     print(
         f"\nNumber of motor vehicle accidents (1982-2018): {all_acc_df.count():,}"
     )
+
+    # data quality check #3
+    assert (
+        all_acc_df.count() > 0
+    ), "Combined accident and acc_aux table (all_acc_df) dataframe is empty!"
 
     # save resulting dataframe for analysis
     output_path = str(
