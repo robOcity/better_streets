@@ -58,16 +58,17 @@ def find_common_set_of_column_names(dfs):
     return sorted(list(reduce(set.intersection, map(set, cols))))
 
 
-def fix_spaces_in_column_names(df):
-    """Returns the dataframe provided with column names without spaces."""
+def fix_spaces_in_column_names(columns):
+    """Returns the cleaned-up column names without spaces and in upper-case."""
 
     new_names = []
-    for col in df.columns:
+    for col in columns:
         new_name = col.strip()
         new_name = "".join(new_name.split())
         new_name = new_name.replace(".", "")
+        new_name = new_name.upper()
         new_names.append(new_name)
-    return df.toDF(*new_names)
+    return new_names
 
 
 def main():
@@ -126,7 +127,10 @@ def main():
             "DAY_WEEK",
             "LGT_COND",
         )
-        accident_df = fix_spaces_in_column_names(accident_df)
+        # fix minor year to year differences in column naming
+        accident_df = accident_df.toDF(
+            *fix_spaces_in_column_names(accident_df.columns)
+        )
         accident_dfs.append(accident_df)
 
         # data quality check #1
@@ -175,7 +179,9 @@ def main():
             "A_D21_24",
             "A_D65PLS",
         )
-        acc_aux_df = fix_spaces_in_column_names(acc_aux_df)
+        acc_aux_df = acc_aux_df.toDF(
+            *fix_spaces_in_column_names(acc_aux_df.columns)
+        )
         acc_aux_dfs.append(acc_aux_df)
 
         # data quality check #2

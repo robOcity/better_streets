@@ -22,3 +22,10 @@ def test_find_common_set_of_column_names():
         ["a", "b"]
     )
 
+
+def test_fix_spaces_in_column_names():
+    assert etl.fix_spaces_in_column_names(["\tA\n", "   b", "c    "]) == [
+        "A",
+        "B",
+        "C",
+    ]
