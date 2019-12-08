@@ -52,11 +52,10 @@ def get_local_paths(root, pattern):
 
 
 def find_common_set_of_column_names(dfs):
-    """Returns the set of columns common to the list of dataframes provided."""
+    """Returns a sorted list of common columns names."""
 
     cols = [set(df.columns) for df in dfs]
-    common_cols = list(reduce(set.intersection, map(set, cols)))
-    return common_cols
+    return sorted(list(reduce(set.intersection, map(set, cols))))
 
 
 def fix_spaces_in_column_names(df):
