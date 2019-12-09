@@ -191,6 +191,15 @@ To meet these goals, I am relying on the follow data sets.
 
   ![Example of a bounding box for the Speer, West Washington Park, and East Washington Park neighborhoods in Denver, Colorado.](./images/bounding-box-site.png)
 
+* [New York Times - A Few Cities Have Cornered Innovation Jobs. Can That Be Changed?](https://www.nytimes.com/2019/12/09/business/economy/innovation-jobs-cities.html) - Which US cities have gained and lost jobs in the "software and pharmaceuticals, semiconductors and data processing" sectors.  
+
+  * Gainers: San Francisco, CA; Seattle, \"Silicon Valley\", CA; WA; Boston, MA; San Diego, CA; Raleigh, NC; Madison, WI; Denver, CO; Salt Lake City, UT; Charleston, SC.
+
+  * Losers: Oxnard, CA; Albuquerque, NM; Colorado Springs, CO; Durham, NC; Washington, DC; Wichita, KA; Los Angeles, CA; Dallas, TX; Philadelphia, PA; Chicago, IL.
+
+  ![Map of US cities that have gained and lost the most jobs in \"innovative\" sectors](./images/nyt_cities_gained_lost_most_innovative_jobs.png)
+
+
 ## Citations
 
 * [The Best Bike Cities in America (2018)](https://www.bicycling.com/culture/a23676188/best-bike-cities-2018/) - Rates and compares American cities in terms of their Bike safety, friendliness, energy, and culture. Seattle is #1, having risen from #6 in 2017, while Denver has dropped three places to #14.
