@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 from pathlib import Path
 from functools import reduce
@@ -8,6 +9,15 @@ from pyspark.sql import (
 )
 from dotenv import load_dotenv
 import utils
+
+
+def load_env():
+    env_path = Path(".") / ".env"
+    load_dotenv(dotenv_path=env_path, verbose=True)
+
+    assert (os.getenv("DATA_LOCAL_ROOT") is not None) and (
+        os.getenv("DATA_S3_BUCKET") is not None
+    ), "Environment variable with the root data directory has not been set"
 
 
 def get_command():
@@ -71,15 +81,38 @@ def fix_spaces_in_column_names(columns):
     return new_names
 
 
+def load_glc_codes():
+    """Returns the Geographic Locator Codes (GLCs) for the U.S."""
+
+    codes_path = (
+        utils.get_external_data_path("FRPP_GLC") / "FRPP_GLC_United_States.csv"
+    )
+    print(f"codes path = {codes_path}", file=sys.stderr)
+    return SparkSession.builder.getOrCreate().read.csv(
+        str(codes_path), inferSchema=True, header=True
+    )
+
+
+def build_dir_year_dict(dirs):
+    """Returns a dict with path as the key and 4-digit year as the value."""
+
+    yr_reg = re.compile(r"\d{4}")
+    hits = [yr_reg.search(str(dir)) for dir in dirs]
+    return {Path(_match.string): _match.group() for _match in hits if _match}
+
+
+def extract_city_by_code(df, glc_city_code, glc_state_code):
+    """Returns a dataframe containing records for the city and state codes."""
+
+    return df.filter(
+        (df.City_Code == glc_city_code) & (df.State_Code == glc_state_code)
+    )
+
+
 def main():
     """Extracts, transforms and loads the traffic accident data."""
 
-    env_path = Path(".") / ".env"
-    load_dotenv(dotenv_path=env_path, verbose=True)
-
-    assert (os.getenv("DATA_LOCAL_ROOT") is not None) and (
-        os.getenv("DATA_S3_BUCKET") is not None
-    ), "Environment variable with the root data directory has not been set"
+    load_env()
 
     while True:
         cmd = get_command()
@@ -104,8 +137,10 @@ def main():
     spark = utils.create_spark_session()
 
     # loop over directories with accident.csv and acc_aux.csv files
-    dirs = find_dirs_with_both_files(
-        "ACCIDENT.CSV", "ACC_AUX.CSV", raw_fars_data_path
+    dir_yr_dict = build_dir_year_dict(
+        find_dirs_with_both_files(
+            "ACCIDENT.CSV", "ACC_AUX.CSV", raw_fars_data_path
+        )
     )
     count = 1
     accident_dfs, acc_aux_dfs, acc_dfs = [], [], []
@@ -113,7 +148,7 @@ def main():
     # join each pair together
     print("\nProcessing Directories")
     # TODO use map reduce rather than looping
-    for _dir in dirs:
+    for _dir, year in dir_yr_dict.items():
         # read in csv data and keep columns common to all years
         accident_df = utils.read_csv(
             str(Path(_dir).joinpath("ACCIDENT.CSV"))
@@ -210,7 +245,7 @@ def main():
         all_acc_df = reduce(DataFrame.unionByName, acc_dfs)
 
     except Exception:
-        print(f"Excepetion while processing: {_dir}")
+        print(f"Exception while processing: {_dir}")
         print(f"Use only common ACCIDENT.CSV columns :\n{accident_common_cols}")
         print(f"Use only common ACC_AUX.CSV columns:\n{acc_aux_common_cols}")
 
@@ -226,7 +261,9 @@ def main():
 
     # save resulting dataframe for analysis
     output_path = str(
-        utils.get_interim_data_path().joinpath("all_accidents_1982_to_2018.csv")
+        utils.get_interim_data_path("FARS").joinpath(
+            "all_fatal_accidents_1982_to_2018.csv"
+        )
     )
     print(f"output_path={output_path}")
     all_acc_df.write.csv(output_path, mode="overwrite", header=True)
