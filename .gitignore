@@ -113,8 +113,7 @@ venv.bak/
 *.cfg
 
 # data files
-/data/interim
-/data/processed
+/data
 
 # vscode
 settings.json
