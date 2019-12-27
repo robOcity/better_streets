@@ -8,12 +8,7 @@ from pyspark.sql import SparkSession, DataFrame
 def create_spark_session():
     """Return a SparkSession object."""
 
-    # TODO clean-up
-    # spark = SparkSession.builder.config(
-    #     "spark.jars.packages", "org.apache.hadoop:hadoop-aws:2.7.0"
-    # ).getOrCreate()
-    spark = SparkSession.builder.getOrCreate()
-    return spark
+    return SparkSession.builder.getOrCreate()
 
 
 def assert_environment_is_good():
@@ -40,10 +35,14 @@ def write_csv(df, path):
     df.write.csv(path, mode="overwrite", header=True)
 
 
-def get_root_dir(env="DATA_LOCAL_ROOT"):
+def get_dir(root, project, kind, source):
+    return Path(root).joinpath(project).joinpath(kind).joinpath(source)
+
+
+def get_root_dir(root="DATA_LOCAL_ROOT", project="PROJECT_KEY"):
     """Returns the root data directory."""
 
-    return Path(os.getenv(env))
+    return Path(os.getenv(root)).joinpath(os.getenv(project))
 
 
 def get_raw_path(env="DATA_LOCAL_ROOT"):
@@ -52,31 +51,15 @@ def get_raw_path(env="DATA_LOCAL_ROOT"):
     return get_root_dir(env) / "raw"
 
 
-def get_interim_data_path(env="DATA_LOCAL_ROOT"):
-    """Returns the path to the 'interim' data directory containing in-production data."""
-
-    return get_root_dir(env) / "interim"
-
-
-def get_external_data_path(src_dir=None, filename=None, env="DATA_LOCAL_ROOT"):
-    """Returns the path to the 'interim' data directory containing in-production data."""
-
-    return get_root_dir(env) / "external" / src_dir / filename
-
-
-def get_processed_data_path(env="DATA_LOCAL_ROOT"):
-    """Returns the path to the 'processed' data directory containing fully-processed data."""
-
-    return get_root_dir(env) / "processed"
-
-
-def get_fars_path(env="DATA_LOCAL_ROOT"):
-    """Returns the path to the top-level FARS directory."""
-
-    return get_root_dir(env) / os.getenv("FARS_KEY")
-
-
 def get_S3_path(bucket):
     """Returns a list of folders in an S3 bucket."""
 
     raise NotImplementedError("get_S3_paths")
+
+
+def convert_dms_to_dd(degrees, minutes, seconds):
+    """Return a decimal degrees value by converting from degrees, minutes, seconds.
+    
+    Cite: https://gist.github.com/tsemerad/5053378"""
+
+    return degrees + float(minutes) / 60 + float(seconds) / 3600
