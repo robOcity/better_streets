@@ -11,17 +11,22 @@ def create_spark_session():
     return SparkSession.builder.getOrCreate()
 
 
-def assert_environment_is_good():
-    assert (os.getenv("DATA_LOCAL_ROOT") is not None) and (
-        os.getenv("DATA_S3_BUCKET") is not None
+def load_env():
+    env_path = Path(".") / ".env"
+    load_dotenv(dotenv_path=env_path, verbose=True)
+
+    assert (
+        os.getenv("DATA_ROOT") is not None
     ), "Environment variable with the root data directory has not been set"
 
 
-def read_csv(csv_full_path):
+def read_csv(path):
     """Returns the PySpark (v2.x) SessionSession object."""
 
+    # note: paths need to be represented only as string in pyspark
+    path = path if isinstance(path, str) else str(path)
     return create_spark_session().read.csv(
-        csv_full_path,
+        path,
         header=True,
         inferSchema=True,
         enforceSchema=False,
@@ -32,23 +37,13 @@ def read_csv(csv_full_path):
 def write_csv(df, path):
     """Saves the dataframe as partitioned CSV files under the specified path."""
 
+    # note: paths need to be represented only as string in pyspark
+    path = path if isinstance(path, str) else str(path)
     df.write.csv(path, mode="overwrite", header=True)
 
 
 def get_dir(root, project, kind, source):
     return Path(root).joinpath(project).joinpath(kind).joinpath(source)
-
-
-def get_root_dir(root="DATA_LOCAL_ROOT", project="PROJECT_KEY"):
-    """Returns the root data directory."""
-
-    return Path(os.getenv(root)).joinpath(os.getenv(project))
-
-
-def get_raw_path(env="DATA_LOCAL_ROOT"):
-    """Returns the path to the 'raw' data directory containing unprocessed data."""
-
-    return get_root_dir(env) / "raw"
 
 
 def get_S3_path(bucket):

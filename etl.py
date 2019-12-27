@@ -11,15 +11,6 @@ from dotenv import load_dotenv
 import utils
 
 
-def load_env():
-    env_path = Path(".") / ".env"
-    load_dotenv(dotenv_path=env_path, verbose=True)
-
-    assert (os.getenv("DATA_LOCAL_ROOT") is not None) and (
-        os.getenv("DATA_S3_BUCKET") is not None
-    ), "Environment variable with the root data directory has not been set"
-
-
 def get_command():
     """Return the command from the user."""
 
@@ -85,7 +76,13 @@ def load_glc_codes():
     """Returns the Geographic Locator Codes (GLCs) for the U.S."""
 
     codes_path = (
-        utils.get_external_data_path("FRPP_GLC") / "FRPP_GLC_United_States.csv"
+        utils.get_dir(
+            os.getenv("DATA_ROOT"),
+            os.getenv("PROJECT_KEY"),
+            "external",
+            "FRPP_GLC",
+        )
+        / "FRPP_GLC_United_States.csv"
     )
     print(f"codes path = {codes_path}", file=sys.stderr)
     return SparkSession.builder.getOrCreate().read.csv(
@@ -112,19 +109,20 @@ def extract_city_by_code(df, glc_city_code, glc_state_code):
 def main():
     """Extracts, transforms and loads the traffic accident data."""
 
-    load_env()
+    utils.load_env()
+    root, project = (
+        os.getenv("DATA_ROOT"),
+        os.getenv("PROJECT_KEY"),
+    )
 
     while True:
         cmd = get_command()
         if cmd == "L":
-            raw_fars_data_path = Path(os.getenv("DATA_LOCAL_ROOT")) / os.getenv(
-                "FARS_KEY"
+            fars_data_path = utils.get_dir(
+                root, project, "external", os.getenv("FARS_KEY"),
             )
-
-            make_filenames_case_consistent(utils.get_fars_path())
-            print(
-                f"\nRunning locally using FARS data from {utils.get_fars_path()}\n"
-            )
+            make_filenames_case_consistent(fars_data_path)
+            print(f"\nRunning locally using FARS data from {fars_data_path}\n")
             break
 
         elif cmd == "A":
@@ -138,9 +136,7 @@ def main():
 
     # loop over directories with accident.csv and acc_aux.csv files
     dir_yr_dict = build_dir_year_dict(
-        find_dirs_with_both_files(
-            "ACCIDENT.CSV", "ACC_AUX.CSV", raw_fars_data_path
-        )
+        find_dirs_with_both_files("ACCIDENT.CSV", "ACC_AUX.CSV", fars_data_path)
     )
     count = 1
     accident_dfs, acc_aux_dfs, acc_dfs = [], [], []
@@ -151,7 +147,7 @@ def main():
     for _dir, year in dir_yr_dict.items():
         # read in csv data and keep columns common to all years
         accident_df = utils.read_csv(
-            str(Path(_dir).joinpath("ACCIDENT.CSV"))
+            Path(_dir).joinpath("ACCIDENT.CSV")
         ).select(
             "ST_CASE",
             "CITY",
@@ -174,9 +170,7 @@ def main():
         ), f"accident_df dataframe from {_dir} is empty!"
 
         # read in csv and only keep columns common to all years
-        acc_aux_df = utils.read_csv(
-            str(Path(_dir).joinpath("ACC_AUX.CSV"))
-        ).select(
+        acc_aux_df = utils.read_csv(Path(_dir).joinpath("ACC_AUX.CSV")).select(
             "ST_CASE",
             "FATALS",
             "YEAR",
@@ -261,7 +255,7 @@ def main():
 
     # save resulting dataframe for analysis
     output_path = str(
-        utils.get_interim_data_path("FARS").joinpath(
+        utils.get_dir(root, project, "interim", "FARS").joinpath(
             "all_fatal_accidents_1982_to_2018.csv"
         )
     )
