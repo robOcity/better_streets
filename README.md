@@ -1,6 +1,7 @@
 # Pedestrian and Cyclist Safety
 
 Making streets better by understanding the dangers they pose to pedestrians, cyclists and others.
+
 ## Motivation
 
 In 2018, Bicycling magazine rated Seattle the countries best city for cyclists.  Denver, the city I live in, dropped three positions to 14.  Cyclist safety is an [issue](https://denverite.com/2019/07/31/traffic-deaths-are-having-a-moment-in-denver-its-the-latest-in-a-scroll-of-preventable-deaths/) here in Denver.  I count my self lucky that I can ride my bike to work.  Yet, with cyclist fatalities in the news, I wondered how do Denver and Seattle compare in terms of cyclist and pedestrian fatalities, and how have those trends changed over time?   This project aims to investigate these questions.
