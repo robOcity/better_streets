@@ -48,7 +48,7 @@ tree -L 3 ../../Data
         └── FARS
 ```
 
-Programmatic access is provided using the [pathlib](https://docs.python.org/3/library/pathlib.html) and [dotenv](https://github.com/theskumar/python-dotenv) packages with the following key-value pairs configured for your system.  
+Programmatic access is provided using the [pathlib](https://docs.python.org/3/library/pathlib.html) package and configuration specifics handled by [dotenv](https://github.com/theskumar/python-dotenv) with details for your system stored as key-value pairs in a `.env` file placed in the top-level project directory.  
 
 ```text
 DATA_ROOT=../../Data
