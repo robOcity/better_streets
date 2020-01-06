@@ -98,7 +98,7 @@ The pipeline code performs the following steps:
     # only showing top 5 rows
     ```
 
-4. Have atleast data quality checks.  
+4. Have at least data quality checks.  
 
     Three data quality checks are in [`etl.py`](./etl.py) that assert every dataframe 1 or more rows.  
 
@@ -109,7 +109,7 @@ The pipeline code performs the following steps:
     ), "Combined accident and acc_aux table (all_acc_df) dataframe is empty!"
     ```
 
-## Pedestrain and cyclist fatalities in Denver, CO and Seattle, WA
+## Pedestrian and cyclist fatalities in Denver, CO and Seattle, WA
 
 Here is the SQL query I used to create the table of preliminary results and the [PySpark](https://spark.apache.org/docs/latest/api/python/index.html#)  code to save them as a set of CSV files.  
 
@@ -201,7 +201,6 @@ To meet these goals, I am relying on the follow data sets.
 
   ![Map of US cities that have gained and lost the most jobs in \"innovative\" sectors](./images/nyt_cities_gained_lost_most_innovative_jobs.png)
 
-
 ## Citations
 
 * [The Best Bike Cities in America (2018)](https://www.bicycling.com/culture/a23676188/best-bike-cities-2018/) - Rates and compares American cities in terms of their Bike safety, friendliness, energy, and culture. Seattle is #1, having risen from #6 in 2017, while Denver has dropped three places to #14.
@@ -216,4 +215,4 @@ To meet these goals, I am relying on the follow data sets.
 
 * [Cookiecutter Data Science](https://drivendata.github.io/cookiecutter-data-science/) - Adopting the data organization scheme from this standardized approach to data science projects.
 
-* [CSV to JSON - Online tool to convert your CSV or TSV formatted data to JSON.](https://csvjson.com/csv2json) - Converted FPRR_GLC data set from CSV to JSON.
+* [CSV to JSON - Online tool to convert your CSV or TSV formatted data to JSON.](https://csvjson.com/csv2json) - Converted FRPP_GLC data set from CSV to JSON.
