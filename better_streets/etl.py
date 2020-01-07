@@ -3,10 +3,7 @@ import re
 import sys
 from pathlib import Path
 from functools import reduce
-from pyspark.sql import (
-    SparkSession,
-    DataFrame,
-)
+from pyspark.sql import SparkSession, DataFrame
 from dotenv import load_dotenv
 import utils
 
@@ -16,19 +13,14 @@ def get_command():
 
     cmd = ""
     while cmd not in ["L", "A", "Q"]:
-        cmd = input("\nL - [L]ocal\nA - [A]WS\nQ - [Q]uit\nCommand: ")[
-            0
-        ].upper()
+        cmd = input("\nL - [L]ocal\nA - [A]WS\nQ - [Q]uit\nCommand: ")[0].upper()
     return cmd
 
 
 def make_filenames_case_consistent(data_path):
     """Returns a list of Path objects with consistent upper-case names."""
 
-    return [
-        p.rename(p.parent / p.name.upper())
-        for p in Path(data_path).rglob("*.csv")
-    ]
+    return [p.rename(p.parent / p.name.upper()) for p in Path(data_path).rglob("*.csv")]
 
 
 def find_dirs_with_both_files(file_1, file_2, data_path):
@@ -77,10 +69,7 @@ def load_glc_codes():
 
     codes_path = (
         utils.get_dir(
-            os.getenv("DATA_ROOT"),
-            os.getenv("PROJECT_KEY"),
-            "external",
-            "FRPP_GLC",
+            os.getenv("DATA_ROOT"), os.getenv("PROJECT_KEY"), "external", "FRPP_GLC"
         )
         / "FRPP_GLC_United_States.csv"
     )
@@ -110,16 +99,13 @@ def main():
     """Extracts, transforms and loads the traffic accident data."""
 
     utils.load_env()
-    root, project = (
-        os.getenv("DATA_ROOT"),
-        os.getenv("PROJECT_KEY"),
-    )
+    root, project = (os.getenv("DATA_ROOT"), os.getenv("PROJECT_KEY"))
 
     while True:
         cmd = get_command()
         if cmd == "L":
             fars_data_path = utils.get_dir(
-                root, project, "external", os.getenv("FARS_KEY"),
+                root, project, "external", os.getenv("FARS_KEY")
             )
             make_filenames_case_consistent(fars_data_path)
             print(f"\nRunning locally using FARS data from {fars_data_path}\n")
@@ -146,28 +132,15 @@ def main():
     # TODO use map reduce rather than looping
     for _dir, year in dir_yr_dict.items():
         # read in csv data and keep columns common to all years
-        accident_df = utils.read_csv(
-            Path(_dir).joinpath("ACCIDENT.CSV")
-        ).select(
-            "ST_CASE",
-            "CITY",
-            "MONTH",
-            "DAY",
-            "HOUR",
-            "MINUTE",
-            "DAY_WEEK",
-            "LGT_COND",
+        accident_df = utils.read_csv(Path(_dir).joinpath("ACCIDENT.CSV")).select(
+            "ST_CASE", "CITY", "MONTH", "DAY", "HOUR", "MINUTE", "DAY_WEEK", "LGT_COND"
         )
         # fix minor year to year differences in column naming
-        accident_df = accident_df.toDF(
-            *fix_spaces_in_column_names(accident_df.columns)
-        )
+        accident_df = accident_df.toDF(*fix_spaces_in_column_names(accident_df.columns))
         accident_dfs.append(accident_df)
 
         # data quality check #1
-        assert (
-            accident_df.count() > 0
-        ), f"accident_df dataframe from {_dir} is empty!"
+        assert accident_df.count() > 0, f"accident_df dataframe from {_dir} is empty!"
 
         # read in csv and only keep columns common to all years
         acc_aux_df = utils.read_csv(Path(_dir).joinpath("ACC_AUX.CSV")).select(
@@ -208,15 +181,11 @@ def main():
             "A_D21_24",
             "A_D65PLS",
         )
-        acc_aux_df = acc_aux_df.toDF(
-            *fix_spaces_in_column_names(acc_aux_df.columns)
-        )
+        acc_aux_df = acc_aux_df.toDF(*fix_spaces_in_column_names(acc_aux_df.columns))
         acc_aux_dfs.append(acc_aux_df)
 
         # data quality check #2
-        assert (
-            acc_aux_df.count() > 0
-        ), f"acc_aux_df dataframe from {_dir} is empty!"
+        assert acc_aux_df.count() > 0, f"acc_aux_df dataframe from {_dir} is empty!"
 
         # join dataframes and drop duplicated columns after merge
         acc_df = accident_df.join(acc_aux_df, on="ST_CASE")
@@ -244,9 +213,7 @@ def main():
         print(f"Use only common ACC_AUX.CSV columns:\n{acc_aux_common_cols}")
 
     # show the number of records
-    print(
-        f"\nNumber of motor vehicle accidents (1982-2018): {all_acc_df.count():,}"
-    )
+    print(f"\nNumber of motor vehicle accidents (1982-2018): {all_acc_df.count():,}")
 
     # data quality check #3
     assert (
