@@ -26,11 +26,7 @@ def read_csv(path):
     # note: paths need to be represented only as string in pyspark
     path = path if isinstance(path, str) else str(path)
     return create_spark_session().read.csv(
-        path,
-        header=True,
-        inferSchema=True,
-        enforceSchema=False,
-        mode="DROPMALFORMED",
+        path, header=True, inferSchema=True, enforceSchema=False, mode="DROPMALFORMED",
     )
 
 

@@ -4,8 +4,8 @@ from pyspark.sql import (
 )
 from pathlib import Path, PosixPath
 import pytest
-import etl
-import utils
+from better_streets import etl
+from better_streets import utils
 
 
 @pytest.fixture
@@ -31,9 +31,7 @@ def test_find_common_set_of_column_names(spark):
     cols = ["a", "b", "d"]
     df_b = spark.createDataFrame(vals, cols)
 
-    assert etl.find_common_set_of_column_names([df_a, df_b]) == sorted(
-        ["a", "b"]
-    )
+    assert etl.find_common_set_of_column_names([df_a, df_b]) == sorted(["a", "b"])
 
 
 def test_fix_spaces_in_column_names():
