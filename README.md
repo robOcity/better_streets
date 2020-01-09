@@ -6,6 +6,10 @@ Making streets better by understanding the dangers they pose to pedestrians, cyc
 
 In 2018, Bicycling magazine rated Seattle the countries best city for cyclists.  Denver, the city I live in, dropped three positions to 14.  Cyclist safety is an [issue](https://denverite.com/2019/07/31/traffic-deaths-are-having-a-moment-in-denver-its-the-latest-in-a-scroll-of-preventable-deaths/) here in Denver.  I count my self lucky that I can ride my bike to work.  Yet, with cyclist fatalities in the news, I wondered how do Denver and Seattle compare in terms of cyclist and pedestrian fatalities, and how have those trends changed over time?   This project aims to investigate these questions.
 
+## Data
+
+A national census of motor vehicle related fatalities is assembled by the National Highway Traffic Safety Administration.  Staring in 1975 and extending to the present, the [Fatality Analysis and Reporting System (FARS)](https://www.nhtsa.gov/research-data/fatality-analysis-reporting-system-fars) data set surveys all fatal crashes involving motor vehicles including vehicle occupants, motorcyclists, pedestrians and bicycle riders.  
+
 ## Goals
 
 1. Analyze the number of fatal traffic accidents per capita, how they have varied over time, and compare the rates in Denver, Colorado and Seattle, Washington.  
@@ -28,23 +32,45 @@ For this project, I choose to use [PySpark](https://spark.apache.org/docs/latest
 
 The pipeline code performs the following steps:
 
-1. Read in the environment variable that defines where data are stored.
+1. Read in the environment variable that defines where data are stored.  My approach to organizing this project including the data comes from [Cookiecutter Data Science](https://drivendata.github.io/cookiecutter-data-science/).  Downloaded from the [NHTSA FTP site](ftp://ftp.nhtsa.dot.gov/fars/) as zip files with each file holding one years worth of data.  Coming from an external source, this data is stored in the `external` folder.  In-process data products are stored in the `interim` folder, and final products in the `processed` folder.  Viewed using the tree command, the directory structure looks like this:
+
+```text
+tree -L 3 ../../Data
+../../Data
+└── better_streets
+    ├── external
+    │   ├── DenverOpenData
+    │   ├── FARS
+    │   └── FRPP_GLC
+    ├── interim
+    │   └── FARS
+    └── processed
+        └── FARS
+```
+
+Programmatic access is provided using the [pathlib](https://docs.python.org/3/library/pathlib.html) package and configuration specifics handled by [dotenv](https://github.com/theskumar/python-dotenv) with details for your system stored as key-value pairs in a `.env` file placed in the top-level project directory.  
+
+```text
+DATA_ROOT=../../Data
+PROJECT_KEY=better_streets
+FARS_KEY=FARS/CSV
+```
 
 1. Determine if the user is running locally or on AWS.  Currently, only the local option is working.
 
-1. Loop over directories holding the annual sets of FARS data.  The goal is to allow Spark to make _narrow_ transformations that are optimally run in parallel.  I intend to replace the for-loop with a call to `reduce`.  Hence, the `TODO` comment signally my intention.
+2. Loop over directories holding the annual sets of FARS data.  The goal is to allow Spark to make _narrow_ transformations that are optimally run in parallel.  I intend to replace the for-loop with a call to `reduce`.  Hence, the `TODO` comment signally my intention.
 
-1. For each directory, join the accident.csv file to the acc_aux.csv file.  The acc_aux.csv contains consistently coded data, whereas the meaning of codes in the accident file has changed over the years.  So, I select a minimal set of columns from the accident table, and a maximal set from the acc_aux table.
+3. For each directory, join the accident.csv file to the acc_aux.csv file.  The acc_aux.csv contains consistently coded data, whereas the meaning of codes in the accident file has changed over the years.  So, I select a minimal set of columns from the accident table, and a maximal set from the acc_aux table.
 
-1. Extra spaces in the column names found in a few CSV files cause problems during development.  A call to `fix_spaces_in_column_names()` removes them.  
+4. Extra spaces in the column names found in a few CSV files cause problems during development.  A call to `fix_spaces_in_column_names()` removes them.  
 
-1. Joining the accident and acc_aux tables using the ST_CASE column combines the dataframes.  Data elements in these two tables are a one-to-one match, so I use an inner (default) join.
+5. Joining the accident and acc_aux tables using the ST_CASE column combines the dataframes.  Data elements in these two tables are a one-to-one match, so I use an inner (default) join.
 
-1. The accident table has changed over the years.  Inconsistent column names caused the pipeline to crash.  Putting this error-prone step in a try / except block, where I find the set of common columns.
+6. The accident table has changed over the years.  Inconsistent column names caused the pipeline to crash.  Putting this error-prone step in a try / except block, where I find the set of common columns.
 
-1. Combining the dataframes using reduce into one using shared column names: `all_acc_df = reduce(DataFrame.unionByName, acc_dfs)`.
+7. Combining the dataframes using reduce into one using shared column names: `all_acc_df = reduce(DataFrame.unionByName, acc_dfs)`.
 
-1. Writing the `all_acc_df` dataframe to disk as a partitioned CSV file, so that it is ready for analysis.  Having many files allows Spark to perform this step in parallel, improving runtimes and enabling the workflow to scale.
+8.  Writing the `all_acc_df` dataframe to disk as a partitioned CSV file, so that it is ready for analysis.  Having many files allows Spark to perform this step in parallel, improving runtimes and enabling the workflow to scale.
 
 ## Requirements
 
@@ -98,7 +124,7 @@ The pipeline code performs the following steps:
     # only showing top 5 rows
     ```
 
-4. Have atleast data quality checks.  
+4. Have at least data quality checks.  
 
     Three data quality checks are in [`etl.py`](./etl.py) that assert every dataframe 1 or more rows.  
 
@@ -109,7 +135,7 @@ The pipeline code performs the following steps:
     ), "Combined accident and acc_aux table (all_acc_df) dataframe is empty!"
     ```
 
-## Pedestrain and cyclist fatalities in Denver, CO and Seattle, WA
+## Pedestrian and cyclist fatalities in Denver, CO and Seattle, WA
 
 Here is the SQL query I used to create the table of preliminary results and the [PySpark](https://spark.apache.org/docs/latest/api/python/index.html#)  code to save them as a set of CSV files.  
 
@@ -201,7 +227,6 @@ To meet these goals, I am relying on the follow data sets.
 
   ![Map of US cities that have gained and lost the most jobs in \"innovative\" sectors](./images/nyt_cities_gained_lost_most_innovative_jobs.png)
 
-
 ## Citations
 
 * [The Best Bike Cities in America (2018)](https://www.bicycling.com/culture/a23676188/best-bike-cities-2018/) - Rates and compares American cities in terms of their Bike safety, friendliness, energy, and culture. Seattle is #1, having risen from #6 in 2017, while Denver has dropped three places to #14.
@@ -216,4 +241,5 @@ To meet these goals, I am relying on the follow data sets.
 
 * [Cookiecutter Data Science](https://drivendata.github.io/cookiecutter-data-science/) - Adopting the data organization scheme from this standardized approach to data science projects.
 
-* [CSV to JSON - Online tool to convert your CSV or TSV formatted data to JSON.](https://csvjson.com/csv2json) - Converted FPRR_GLC data set from CSV to JSON.
+* [CSV to JSON - Online tool to convert your CSV or TSV formatted data to JSON.](https://csvjson.com/csv2json) - Converted FRPP_GLC data set from CSV to JSON.
+****
