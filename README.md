@@ -58,47 +58,47 @@ FARS_KEY=FARS/CSV
 
 1. Determine if the user is running locally or on AWS.  Currently, only the local option is working.
 
-2. Loop over directories holding the annual sets of FARS data.  The goal is to allow Spark to make _narrow_ transformations that are optimally run in parallel.  I intend to replace the for-loop with a call to `reduce`.  Hence, the `TODO` comment signally my intention.
+1. Loop over directories holding the annual sets of FARS data.  The goal is to allow Spark to make _narrow_ transformations that are optimally run in parallel.  I intend to replace the for-loop with a call to `reduce`.  Hence, the `TODO` comment signally my intention.
 
-3. For each directory, join the accident.csv file to the acc_aux.csv file.  The acc_aux.csv contains consistently coded data, whereas the meaning of codes in the accident file has changed over the years.  So, I select a minimal set of columns from the accident table, and a maximal set from the acc_aux table.
+1. For each directory, join the accident.csv file to the acc_aux.csv file.  The acc_aux.csv contains consistently coded data, whereas the meaning of codes in the accident file has changed over the years.  So, I select a minimal set of columns from the accident table, and a maximal set from the acc_aux table.
 
-4. Extra spaces in the column names found in a few CSV files cause problems during development.  A call to `fix_spaces_in_column_names()` removes them.  
+1. Extra spaces in the column names found in a few CSV files cause problems during development.  A call to `fix_spaces_in_column_names()` removes them.  
 
-5. Joining the accident and acc_aux tables using the ST_CASE column combines the dataframes.  Data elements in these two tables are a one-to-one match, so I use an inner (default) join.
+1. Joining the accident and acc_aux tables using the ST_CASE column combines the dataframes.  Data elements in these two tables are a one-to-one match, so I use an inner (default) join.
 
-6. The accident table has changed over the years.  Inconsistent column names caused the pipeline to crash.  Putting this error-prone step in a try / except block, where I find the set of common columns.
+1. The accident table has changed over the years.  Inconsistent column names caused the pipeline to crash.  Putting this error-prone step in a try / except block, where I find the set of common columns.
 
-7. Combining the dataframes using reduce into one using shared column names: `all_acc_df = reduce(DataFrame.unionByName, acc_dfs)`.
+1. Combining the dataframes using reduce into one using shared column names: `all_acc_df = reduce(DataFrame.unionByName, acc_dfs)`.
 
-8.  Writing the `all_acc_df` dataframe to disk as a partitioned CSV file, so that it is ready for analysis.  Having many files allows Spark to perform this step in parallel, improving runtimes and enabling the workflow to scale.
+1. Writing the `all_acc_df` dataframe to disk as a partitioned CSV file, so that it is ready for analysis.  Having many files allows Spark to perform this step in parallel, improving runtimes and enabling the workflow to scale.
 
 ## Requirements
 
 1. Analyze over 1,000,000 rows of data.  Here I ingest 1,349,445 rows of [FARS](https://www.nhtsa.gov/research-data/fatality-analysis-reporting-system-fars) data spanning a 36 year period.  Every row represents a fatal motor vehicle accident.  
 
-```python
-# read in accident data
-    full_path = str(
-        utils.get_interim_data_path() / "all_accidents_1982_to_2018.csv"
-    )
-    accidents = utils.read_csv(full_path)
+    ```python
+    # read in accident data
+        full_path = str(
+            utils.get_interim_data_path() / "all_accidents_1982_to_2018.csv"
+        )
+        accidents = utils.read_csv(full_path)
 
-    # convert column to integer
-    accidents = accidents.withColumn(
-        "FATALS", accidents["FATALS"].cast(T.IntegerType())
-    )
+        # convert column to integer
+        accidents = accidents.withColumn(
+            "FATALS", accidents["FATALS"].cast(T.IntegerType())
+        )
 
-    # prepare for analysis
-    accidents.createOrReplaceTempView("accidents")
+        # prepare for analysis
+        accidents.createOrReplaceTempView("accidents")
 
-    # total number of accidents
-    print(f"\nFatal Accidents 1982 to 1018: {accidents.count():,}")
-    # Fatal Accidents 1982 to 1018: 1,349,445
-```
+        # total number of accidents
+        print(f"\nFatal Accidents 1982 to 1018: {accidents.count():,}")
+        # Fatal Accidents 1982 to 1018: 1,349,445
+    ```
 
-2. Provide a [data dictionary](./data-dictionary.md) for the project.
+1. Provide a [data dictionary](./data-dictionary.md) for the project.
 
-3. Use at least two data "flavors".  FARS data relies on Geographic Location Codes ([FRPP GLC](https://www.gsa.gov/reference/geographic-locator-codes/glcs-for-the-us-and-us-territories)) to identify the state, , and city where the accident occurred.  The General Services Administration provides these data as Excel files.  To meet the requirements of this project, I converted the spreadsheet to CSV, then converted the [CSV to JSON](https://csvjson.com/csv2json), and used the JSON in my analysis.  
+1. Use at least two data "flavors".  FARS data relies on Geographic Location Codes ([FRPP GLC](https://www.gsa.gov/reference/geographic-locator-codes/glcs-for-the-us-and-us-territories)) to identify the state, , and city where the accident occurred.  The General Services Administration provides these data as Excel files.  To meet the requirements of this project, I converted the spreadsheet to CSV, then converted the [CSV to JSON](https://csvjson.com/csv2json), and used the JSON in my analysis.  
 
     ```python
     # read in geographic location codes as json
@@ -124,7 +124,7 @@ FARS_KEY=FARS/CSV
     # only showing top 5 rows
     ```
 
-4. Have at least data quality checks.  
+1. Have at least data quality checks.  
 
     Three data quality checks are in [`etl.py`](./etl.py) that assert every dataframe 1 or more rows.  
 
@@ -183,7 +183,7 @@ To run the test suite for this project, enter `python -m pytest -v`.
 
 1. Perform ETL by running `python etl.py` from the project directory.
 
-2. Analyze the data by running `python analysis.py`.
+1. Analyze the data by running `python analysis.py`.
 
 ## Access to Data
 
@@ -197,17 +197,20 @@ The data for this project are in the traffic-safety bucket on AWS S3 located in 
 
 To meet these goals, I am relying on the follow data sets.
 
-* [Fatality Analysis Reporting System (FARS)](https://www.nhtsa.gov/research-data/fatality-analysis-reporting-system-fars) - A nationwide census of fatal motor vehicle accidents compiled by the National Highway Traffic Safety Administration (NHTSA) with data provided by the states.  You can find the documentation [here](https://crashstats.nhtsa.dot.gov/#/DocumentTypeList/23) and three reports, in particular, were especially important for my analysis:
+* [Fatality Analysis Reporting System (FARS)](https://www.nhtsa.gov/research-data/fatality-analysis-reporting-system-fars)
 
-  * [Fatality Analysis Reporting System \(FARS\)  Analytical User’s Manual, 1975-2018 \(NHTSA\)](https://  crashstats.nhtsa.dot.gov/Api/Public/ViewPublication/812827)
+  ![FARS Data File Relations](./images/FARS-data-files-relations.png)
+  _The relations between the FARS   data files, type of data they represent, and how to the data elements that used to join them._
+
+A nationwide census of fatal motor vehicle accidents compiled by the National Highway Traffic Safety Administration (NHTSA) with data provided by the states.  You can find the documentation [here](https://crashstats.nhtsa.dot.gov/#/DocumentTypeList/23) and three reports, in particular, were especially important for my analysis:
+
+  * [Fatality Analysis Reporting System (FARS)  Analytical User’s Manual, 1975-2018 (NHTSA)](https://crashstats.nhtsa.dot.gov/Api/Public/ViewPublication/812827)
   
   * [Fatality Analysis Reporting System (FARS) Auxiliary Datasets Analytical User’s Manual 1982-2018   (NHTSA)](https://crashstats.nhtsa.dot.gov/Api/Public/ViewPublication/812829)
   
-  * [2018 FARS/CRSS Pedestrian Bicyclist Crash, Typing Manual, A Guide for Coders Using the FARS/CRSS Ped/  Bike Typing Tool Revision Date: June 2019 (NHTSA)](https://crashstats.nhtsa.dot.gov/Api/Public/  ViewPublication/812809)
+  * [2018 FARS/CRSS Pedestrian Bicyclist Crash, Typing Manual, A Guide for Coders Using the FARS/CRSS Ped/  Bike Typing Tool Revision Date: June 2019 (NHTSA)](https://crashstats.nhtsa.dot.gov/Api/Public/ViewPublication/812809)
   
-  ![FARS Data File Relations](./images/FARS-data-files-relations.png) - The relations between the FARS   data files, type of data they represent, and how to the data elements that used to join them.  
-  
-* [GLCs for the U.S. and U.S. Territories](https://www.gsa.gov/reference/geographic-locator-codes/  glcs-for-the-us-and-us-territories) - Source of Geographic Location Codes provided by the U.S. General   Services Administration.  
+  * [GLCs for the U.S. and U.S. Territories](https://www.gsa.gov/reference/geographic-locator-codes/glcs-for-the-us-and-us-territories) - Source of Geographic Location Codes provided by the U.S. General   Services Administration.  
 
 ## Files
 
