@@ -175,6 +175,10 @@ Here is the SQL query I used to create the table of preliminary results and the 
     utils.write_csv(ped_bike_fatalities, ped_bike_fatalities_path)
 ```
 
+## Testing
+
+To run the test suite for this project, enter `python -m pytest -v`.  
+
 ## Running
 
 1. Perform ETL by running `python etl.py` from the project directory.
