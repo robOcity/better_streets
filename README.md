@@ -242,4 +242,3 @@ To meet these goals, I am relying on the follow data sets.
 * [Cookiecutter Data Science](https://drivendata.github.io/cookiecutter-data-science/) - Adopting the data organization scheme from this standardized approach to data science projects.
 
 * [CSV to JSON - Online tool to convert your CSV or TSV formatted data to JSON.](https://csvjson.com/csv2json) - Converted FRPP_GLC data set from CSV to JSON.
-****
