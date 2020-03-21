@@ -181,9 +181,9 @@ To run the test suite for this project, enter `python -m pytest -v`.
 
 ## Running
 
-1. Perform ETL by running `python etl.py` from the project directory.
+1. Perform ETL by running `python -m peds.etl` from the project directory.
 
-1. Analyze the data by running `python analysis.py`.
+1. Analyze the data by running `python -m peds.analysis.py`.
 
 ## Access to Data
 
@@ -249,3 +249,7 @@ A nationwide census of fatal motor vehicle accidents compiled by the National Hi
 * [Cookiecutter Data Science](https://drivendata.github.io/cookiecutter-data-science/) - Adopting the data organization scheme from this standardized approach to data science projects.
 
 * [CSV to JSON - Online tool to convert your CSV or TSV formatted data to JSON.](https://csvjson.com/csv2json) - Converted FRPP_GLC data set from CSV to JSON.
+
+* [Hitchhiker's guide to the Python imports](https://alex.dzyoba.com/blog/python-import/) - Concise discussion of Python packaging, how to structure applications and how to run executable packages.
+
+* [Python Application Layouts: A Reference](https://realpython.com/python-application-layouts/) - How to structure Python applications in simple and more complex applications.  
