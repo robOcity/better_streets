@@ -95,32 +95,11 @@ def extract_city_by_code(df, glc_city_code, glc_state_code):
     )
 
 
-def main():
-    """Extracts, transforms and loads the traffic accident data."""
-
-    utils.load_env()
-    root, project = (os.getenv("DATA_ROOT"), os.getenv("PROJECT_KEY"))
-
-    while True:
-        cmd = get_command()
-        if cmd == "L":
-            fars_data_path = utils.get_dir(
-                root, project, "external", os.getenv("FARS_KEY")
-            )
-            make_filenames_case_consistent(fars_data_path)
-            print(f"\nRunning locally using FARS data from {fars_data_path}\n")
-            break
-
-        elif cmd == "A":
-            raise NotImplementedError()
-
-        elif cmd == "Q":
-            print("\nExiting")
-            sys.exit(0)
-
-    spark = utils.create_spark_session()
+def den_sea_pipeline(root, project):
 
     # loop over directories with accident.csv and acc_aux.csv files
+    fars_data_path = utils.get_dir(root, project, "external", os.getenv("FARS_KEY"))
+
     dir_yr_dict = build_dir_year_dict(
         find_dirs_with_both_files("ACCIDENT.CSV", "ACC_AUX.CSV", fars_data_path)
     )
@@ -228,6 +207,33 @@ def main():
     )
     print(f"output_path={output_path}")
     all_acc_df.write.csv(output_path, mode="overwrite", header=True)
+
+
+def main():
+    """Extracts, transforms and loads the traffic accident data."""
+
+    utils.load_env()
+    root, project = (os.getenv("DATA_ROOT"), os.getenv("PROJECT_KEY"))
+
+    while True:
+        cmd = get_command()
+        if cmd == "L":
+            fars_data_path = utils.get_dir(
+                root, project, "external", os.getenv("FARS_KEY")
+            )
+            make_filenames_case_consistent(fars_data_path)
+            print(f"\nRunning locally using FARS data from {fars_data_path}\n")
+            break
+
+        elif cmd == "A":
+            raise NotImplementedError()
+
+        elif cmd == "Q":
+            print("\nExiting")
+            sys.exit(0)
+
+    spark = utils.create_spark_session()
+    den_sea_pipeline(root, project)
 
 
 if __name__ == "__main__":
