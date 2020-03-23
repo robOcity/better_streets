@@ -12,8 +12,14 @@ def get_command():
     """Return the command from the user."""
 
     cmd = ""
-    while cmd not in ["L", "A", "Q"]:
-        cmd = input("\nL - [L]ocal\nA - [A]WS\nQ - [Q]uit\nCommand: ")[0].upper()
+    while cmd not in ["A", "P", "Q"]:
+        cmd = input(
+            """
+            A - [A]ccident Pipeline
+            P - [P]erson Pipeline
+            Q - [Q]uit
+            Command: """
+        )[0].upper()
     return cmd
 
 
@@ -95,10 +101,12 @@ def extract_city_by_code(df, glc_city_code, glc_state_code):
     )
 
 
-def den_sea_pipeline(root, project):
+def accident_pipeline(root, project):
+    """Run the accident pipeline and extract Denver and Seattle specifics."""
 
     # loop over directories with accident.csv and acc_aux.csv files
     fars_data_path = utils.get_dir(root, project, "external", os.getenv("FARS_KEY"))
+    print(f"\nRunning locally using FARS data from {fars_data_path}\n")
 
     dir_yr_dict = build_dir_year_dict(
         find_dirs_with_both_files("ACCIDENT.CSV", "ACC_AUX.CSV", fars_data_path)
@@ -209,31 +217,32 @@ def den_sea_pipeline(root, project):
     all_acc_df.write.csv(output_path, mode="overwrite", header=True)
 
 
+def person_pipeline(root, project):
+    """Run the person-level data pipeline."""
+    print("Running the Person-level pipeline")
+    raise NotImplementedError()
+
+
 def main():
     """Extracts, transforms and loads the traffic accident data."""
 
+    cmd = get_command()
+    if cmd == "Q":
+        print("\nExiting")
+        sys.exit(0)
+
     utils.load_env()
     root, project = (os.getenv("DATA_ROOT"), os.getenv("PROJECT_KEY"))
-
-    while True:
-        cmd = get_command()
-        if cmd == "L":
-            fars_data_path = utils.get_dir(
-                root, project, "external", os.getenv("FARS_KEY")
-            )
-            make_filenames_case_consistent(fars_data_path)
-            print(f"\nRunning locally using FARS data from {fars_data_path}\n")
-            break
-
-        elif cmd == "A":
-            raise NotImplementedError()
-
-        elif cmd == "Q":
-            print("\nExiting")
-            sys.exit(0)
-
     spark = utils.create_spark_session()
-    den_sea_pipeline(root, project)
+    fars_data_path = utils.get_dir(root, project, "external", os.getenv("FARS_KEY"))
+    make_filenames_case_consistent(fars_data_path)
+
+    if cmd == "A":
+        print(f"\nRunning FARS Accident Pipeline\n")
+        accident_pipeline(root, project)
+
+    elif cmd == "P":
+        person_pipeline(root, project)
 
 
 if __name__ == "__main__":
