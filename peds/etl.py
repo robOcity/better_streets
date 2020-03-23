@@ -29,14 +29,14 @@ def make_filenames_case_consistent(data_path):
     return [p.rename(p.parent / p.name.upper()) for p in Path(data_path).rglob("*.csv")]
 
 
-def find_dirs_with_both_files(file_1, file_2, data_path):
+def find_dirs_containing(files, data_path):
     """Returns a list of directories that contain both file_1 and file_2."""
 
     return sorted(
         [
             _dir
             for _dir in Path(data_path).iterdir()
-            if _dir.joinpath(file_1).exists() and _dir.joinpath(file_2).exists()
+            if all(_dir.joinpath(_file).exists() for _file in files)
         ]
     )
 
@@ -109,7 +109,7 @@ def accident_pipeline(root, project):
     print(f"\nRunning locally using FARS data from {fars_data_path}\n")
 
     dir_yr_dict = build_dir_year_dict(
-        find_dirs_with_both_files("ACCIDENT.CSV", "ACC_AUX.CSV", fars_data_path)
+        find_dirs_containing(["ACCIDENT.CSV", "ACC_AUX.CSV"], fars_data_path)
     )
     count = 1
     accident_dfs, acc_aux_dfs, acc_dfs = [], [], []
@@ -220,7 +220,18 @@ def accident_pipeline(root, project):
 def person_pipeline(root, project):
     """Run the person-level data pipeline."""
     print("Running the Person-level pipeline")
-    raise NotImplementedError()
+    fars_data_path = utils.get_dir(root, project, "external", os.getenv("FARS_KEY"))
+    print(fars_data_path)
+    files = [
+        "PERSON.CSV",
+        "VEHICLE.CSV",
+        "ACCIDENT.CSV",
+        "PBTYPE.CSV",
+        "VIOLATN.CSV",
+        "NMCRASH.CSV",
+    ]
+    dirs = find_dirs_containing(files, fars_data_path)
+    [print(_dir) for _dir in dirs]
 
 
 def main():
@@ -242,9 +253,9 @@ def main():
         accident_pipeline(root, project)
 
     elif cmd == "P":
+        print(f"\nRunning FARS Person Pipeline\n")
         person_pipeline(root, project)
 
 
 if __name__ == "__main__":
-    print("About to run main()")
     main()
