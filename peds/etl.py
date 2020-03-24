@@ -5,15 +5,21 @@ from pathlib import Path
 from functools import reduce
 from pyspark.sql import SparkSession, DataFrame
 from dotenv import load_dotenv
-from better_streets import utils
+from peds import utils
 
 
 def get_command():
     """Return the command from the user."""
 
     cmd = ""
-    while cmd not in ["L", "A", "Q"]:
-        cmd = input("\nL - [L]ocal\nA - [A]WS\nQ - [Q]uit\nCommand: ")[0].upper()
+    while cmd not in ["A", "P", "Q"]:
+        cmd = input(
+            """
+            A - [A]ccident Pipeline
+            P - [P]erson Pipeline
+            Q - [Q]uit
+            Command: """
+        )[0].upper()
     return cmd
 
 
@@ -23,14 +29,14 @@ def make_filenames_case_consistent(data_path):
     return [p.rename(p.parent / p.name.upper()) for p in Path(data_path).rglob("*.csv")]
 
 
-def find_dirs_with_both_files(file_1, file_2, data_path):
+def find_dirs_containing(files, data_path):
     """Returns a list of directories that contain both file_1 and file_2."""
 
     return sorted(
         [
             _dir
             for _dir in Path(data_path).iterdir()
-            if _dir.joinpath(file_1).exists() and _dir.joinpath(file_2).exists()
+            if all(_dir.joinpath(_file).exists() for _file in files)
         ]
     )
 
@@ -95,34 +101,15 @@ def extract_city_by_code(df, glc_city_code, glc_state_code):
     )
 
 
-def main():
-    """Extracts, transforms and loads the traffic accident data."""
-
-    utils.load_env()
-    root, project = (os.getenv("DATA_ROOT"), os.getenv("PROJECT_KEY"))
-
-    while True:
-        cmd = get_command()
-        if cmd == "L":
-            fars_data_path = utils.get_dir(
-                root, project, "external", os.getenv("FARS_KEY")
-            )
-            make_filenames_case_consistent(fars_data_path)
-            print(f"\nRunning locally using FARS data from {fars_data_path}\n")
-            break
-
-        elif cmd == "A":
-            raise NotImplementedError()
-
-        elif cmd == "Q":
-            print("\nExiting")
-            sys.exit(0)
-
-    spark = utils.create_spark_session()
+def accident_pipeline(root, project):
+    """Run the accident pipeline and extract Denver and Seattle specifics."""
 
     # loop over directories with accident.csv and acc_aux.csv files
+    fars_data_path = utils.get_dir(root, project, "external", os.getenv("FARS_KEY"))
+    print(f"\nRunning locally using FARS data from {fars_data_path}\n")
+
     dir_yr_dict = build_dir_year_dict(
-        find_dirs_with_both_files("ACCIDENT.CSV", "ACC_AUX.CSV", fars_data_path)
+        find_dirs_containing(["ACCIDENT.CSV", "ACC_AUX.CSV"], fars_data_path)
     )
     count = 1
     accident_dfs, acc_aux_dfs, acc_dfs = [], [], []
@@ -230,6 +217,45 @@ def main():
     all_acc_df.write.csv(output_path, mode="overwrite", header=True)
 
 
+def person_pipeline(root, project):
+    """Run the person-level data pipeline."""
+    print("Running the Person-level pipeline")
+    fars_data_path = utils.get_dir(root, project, "external", os.getenv("FARS_KEY"))
+    print(fars_data_path)
+    files = [
+        "PERSON.CSV",
+        "VEHICLE.CSV",
+        "ACCIDENT.CSV",
+        "PBTYPE.CSV",
+        "VIOLATN.CSV",
+        "NMCRASH.CSV",
+    ]
+    dirs = find_dirs_containing(files, fars_data_path)
+    [print(_dir) for _dir in dirs]
+
+
+def main():
+    """Extracts, transforms and loads the traffic accident data."""
+
+    cmd = get_command()
+    if cmd == "Q":
+        print("\nExiting")
+        sys.exit(0)
+
+    utils.load_env()
+    root, project = (os.getenv("DATA_ROOT"), os.getenv("PROJECT_KEY"))
+    spark = utils.create_spark_session()
+    fars_data_path = utils.get_dir(root, project, "external", os.getenv("FARS_KEY"))
+    make_filenames_case_consistent(fars_data_path)
+
+    if cmd == "A":
+        print(f"\nRunning FARS Accident Pipeline\n")
+        accident_pipeline(root, project)
+
+    elif cmd == "P":
+        print(f"\nRunning FARS Person Pipeline\n")
+        person_pipeline(root, project)
+
+
 if __name__ == "__main__":
-    print("About to run main()")
     main()

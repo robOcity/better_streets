@@ -4,8 +4,8 @@ from pyspark.sql import (
 )
 from pathlib import Path, PosixPath
 import pytest
-from better_streets import etl
-from better_streets import utils
+from peds import etl
+from peds import utils
 
 
 @pytest.fixture
@@ -113,4 +113,3 @@ def test_extract_city_by_code(spark):
 #     df = spark.createDataFrame(vals, cols)
 #     assert df.count() == 6
 #     assert etl.extract_by_name(df, "denveR", "COLoRADO").count() == 2
-

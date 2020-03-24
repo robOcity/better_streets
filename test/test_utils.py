@@ -1,6 +1,6 @@
 import os
 import pathlib
-from better_streets import utils
+from peds import utils
 
 
 def test_get_dir(tmp_path):

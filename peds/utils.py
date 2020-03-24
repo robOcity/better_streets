@@ -26,17 +26,21 @@ def load_env():
 
 
 def read_csv(path):
-    """Returns the PySpark (v2.x) SessionSession object."""
+    """Returns a dataframe of the CSV file located at path."""
 
     # note: paths need to be represented only as string in pyspark
     path = path if isinstance(path, str) else str(path)
     return create_spark_session().read.csv(
-        path, header=True, inferSchema=True, enforceSchema=False, mode="DROPMALFORMED",
+        path,
+        header=True,
+        inferSchema=True,
+        enforceSchema=False,
+        mode="DROPMALFORMED",
     )
 
 
 def write_csv(df, path):
-    """Saves the dataframe as partitioned CSV files under the specified path."""
+    """Saves the dataframe as partitioned CSV files to the specified path."""
 
     # note: paths need to be represented only as string in pyspark
     path = path if isinstance(path, str) else str(path)
@@ -44,7 +48,7 @@ def write_csv(df, path):
 
 
 def get_dir(root, project, kind, source):
-    """Returns the data directory root for the project."""
+    """Returns the path the to data directory."""
 
     return Path(root).joinpath(project).joinpath(kind).joinpath(source)
 
