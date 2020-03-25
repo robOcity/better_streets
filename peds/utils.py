@@ -12,12 +12,17 @@ def create_spark_session():
 
 
 def load_env():
+    """Loads key-value pairs from your .env file as system environment variables."""
+
     env_path = Path(".") / ".env"
     load_dotenv(dotenv_path=env_path, verbose=True)
 
     assert (
         os.getenv("DATA_ROOT") is not None
-    ), "Environment variable with the root data directory has not been set"
+    ), "Environment variable with the root data directory has not been set."
+    assert (
+        os.getenv("PROJECT_KEY") is not None
+    ), "Environment variable with the name of the project has not been set."
 
 
 def read_csv(path):
@@ -26,7 +31,11 @@ def read_csv(path):
     # note: paths need to be represented only as string in pyspark
     path = path if isinstance(path, str) else str(path)
     return create_spark_session().read.csv(
-        path, header=True, inferSchema=True, enforceSchema=False, mode="DROPMALFORMED",
+        path,
+        header=True,
+        inferSchema=True,
+        enforceSchema=False,
+        mode="DROPMALFORMED",
     )
 
 
