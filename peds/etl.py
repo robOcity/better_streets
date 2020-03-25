@@ -217,6 +217,11 @@ def accident_pipeline(root, project):
     all_acc_df.write.csv(output_path, mode="overwrite", header=True)
 
 
+def read(_dir, _file):
+    """Read the CSV file in dir and return as a dataframe."""
+    return utils.read_csv(Path(_dir).joinpath(_file))
+
+
 def person_pipeline(root, project):
     """Run the person-level data pipeline."""
     print("Running the Person-level pipeline")
@@ -231,7 +236,8 @@ def person_pipeline(root, project):
         "NMCRASH.CSV",
     ]
     dirs = find_dirs_containing(files, fars_data_path)
-    [print(_dir) for _dir in dirs]
+    dfs = list(map(read, [_dir for _dir in dirs], [_file for _file in files]))
+    print("\n".join([f"{df.count()}, {len(df.columns)}" for df in dfs]))
 
 
 def main():
