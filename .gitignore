@@ -117,3 +117,7 @@ venv.bak/
 
 # vscode
 settings.json
+
+# temp files
+plots/
+*.ipynb
