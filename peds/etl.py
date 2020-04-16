@@ -6,6 +6,7 @@ from functools import reduce
 from pyspark.sql import SparkSession, DataFrame
 from dotenv import load_dotenv
 from peds import utils
+from collections import defaultdict
 
 
 def get_command():
@@ -26,7 +27,10 @@ def get_command():
 def make_filenames_case_consistent(data_path):
     """Returns a list of Path objects with consistent upper-case names."""
 
-    return [p.rename(p.parent / p.name.upper()) for p in Path(data_path).rglob("*.csv")]
+    return [
+        p.rename(p.parent / p.name.upper())
+        for p in Path(data_path).rglob("*.csv")
+    ]
 
 
 def find_dirs_containing(files, data_path):
@@ -75,7 +79,10 @@ def load_glc_codes():
 
     codes_path = (
         utils.get_dir(
-            os.getenv("DATA_ROOT"), os.getenv("PROJECT_KEY"), "external", "FRPP_GLC"
+            os.getenv("DATA_ROOT"),
+            os.getenv("PROJECT_KEY"),
+            "external",
+            "FRPP_GLC",
         )
         / "FRPP_GLC_United_States.csv"
     )
@@ -105,7 +112,9 @@ def accident_pipeline(root, project):
     """Run the accident pipeline and extract Denver and Seattle specifics."""
 
     # loop over directories with accident.csv and acc_aux.csv files
-    fars_data_path = utils.get_dir(root, project, "external", os.getenv("FARS_KEY"))
+    fars_data_path = utils.get_dir(
+        root, project, "external", os.getenv("FARS_KEY")
+    )
     print(f"\nRunning locally using FARS data from {fars_data_path}\n")
 
     dir_yr_dict = build_dir_year_dict(
@@ -119,15 +128,28 @@ def accident_pipeline(root, project):
     # TODO use map reduce rather than looping
     for _dir, year in dir_yr_dict.items():
         # read in csv data and keep columns common to all years
-        accident_df = utils.read_csv(Path(_dir).joinpath("ACCIDENT.CSV")).select(
-            "ST_CASE", "CITY", "MONTH", "DAY", "HOUR", "MINUTE", "DAY_WEEK", "LGT_COND"
+        accident_df = utils.read_csv(
+            Path(_dir).joinpath("ACCIDENT.CSV")
+        ).select(
+            "ST_CASE",
+            "CITY",
+            "MONTH",
+            "DAY",
+            "HOUR",
+            "MINUTE",
+            "DAY_WEEK",
+            "LGT_COND",
         )
         # fix minor year to year differences in column naming
-        accident_df = accident_df.toDF(*fix_spaces_in_column_names(accident_df.columns))
+        accident_df = accident_df.toDF(
+            *fix_spaces_in_column_names(accident_df.columns)
+        )
         accident_dfs.append(accident_df)
 
         # data quality check #1
-        assert accident_df.count() > 0, f"accident_df dataframe from {_dir} is empty!"
+        assert (
+            accident_df.count() > 0
+        ), f"accident_df dataframe from {_dir} is empty!"
 
         # read in csv and only keep columns common to all years
         acc_aux_df = utils.read_csv(Path(_dir).joinpath("ACC_AUX.CSV")).select(
@@ -168,11 +190,15 @@ def accident_pipeline(root, project):
             "A_D21_24",
             "A_D65PLS",
         )
-        acc_aux_df = acc_aux_df.toDF(*fix_spaces_in_column_names(acc_aux_df.columns))
+        acc_aux_df = acc_aux_df.toDF(
+            *fix_spaces_in_column_names(acc_aux_df.columns)
+        )
         acc_aux_dfs.append(acc_aux_df)
 
         # data quality check #2
-        assert acc_aux_df.count() > 0, f"acc_aux_df dataframe from {_dir} is empty!"
+        assert (
+            acc_aux_df.count() > 0
+        ), f"acc_aux_df dataframe from {_dir} is empty!"
 
         # join dataframes and drop duplicated columns after merge
         acc_df = accident_df.join(acc_aux_df, on="ST_CASE")
@@ -200,7 +226,9 @@ def accident_pipeline(root, project):
         print(f"Use only common ACC_AUX.CSV columns:\n{acc_aux_common_cols}")
 
     # show the number of records
-    print(f"\nNumber of motor vehicle accidents (1982-2018): {all_acc_df.count():,}")
+    print(
+        f"\nNumber of motor vehicle accidents (1982-2018): {all_acc_df.count():,}"
+    )
 
     # data quality check #3
     assert (
@@ -217,27 +245,46 @@ def accident_pipeline(root, project):
     all_acc_df.write.csv(output_path, mode="overwrite", header=True)
 
 
-def read(_dir, _file):
-    """Read the CSV file in dir and return as a dataframe."""
+def read_csv(_dir, _file):
+    """Read the CSV file in dir and returns a dataframe."""
     return utils.read_csv(Path(_dir).joinpath(_file))
 
 
 def person_pipeline(root, project):
     """Run the person-level data pipeline."""
     print("Running the Person-level pipeline")
-    fars_data_path = utils.get_dir(root, project, "external", os.getenv("FARS_KEY"))
-    print(fars_data_path)
+    fars_data_path = utils.get_dir(
+        root, project, "external", os.getenv("FARS_KEY")
+    )
+    print(root, project, "external", os.getenv("FARS_KEY"))
+    print(f"\nRunning locally using FARS data from {fars_data_path}\n")
+
     files = [
-        "PERSON.CSV",
-        "VEHICLE.CSV",
         "ACCIDENT.CSV",
-        "PBTYPE.CSV",
-        "VIOLATN.CSV",
-        "NMCRASH.CSV",
+        "PERSON.CSV",
+        # "VEHICLE.CSV",
+        # "PBTYPE.CSV",
+        # "VIOLATN.CSV",
+        # "NMCRASH.CSV",
     ]
-    dirs = find_dirs_containing(files, fars_data_path)
-    dfs = list(map(read, [_dir for _dir in dirs], [_file for _file in files]))
-    print("\n".join([f"{df.count()}, {len(df.columns)}" for df in dfs]))
+
+    yr_dir = build_dir_year_dict(find_dirs_containing(files, fars_data_path))
+    dfs_year_file = defaultdict(lambda: defaultdict(dict))
+    for _dir, year in yr_dir.items():
+        for _file in files:
+            df = read_csv(_dir, _file)
+            df = df.toDF(*fix_spaces_in_column_names(df.columns))
+            dfs_year_file[year][_file] = df
+
+    files_found = [set(dfs_year_file[y].keys()) for y in dfs_year_file.keys()]
+    for _file in reduce(set.intersection, files_found):
+        # get all dataframes for a given datafile
+        dfs = [dfs_year_file[yr][_file] for yr in dfs_year_file.keys()]
+        common_cols = [find_common_set_of_column_names(dfs)]
+        # select common columns in all dataframes
+        dfs = [df.select(*common_cols) for df in dfs]
+        # union the dataframes together by column name
+        reduce(DataFrame.unionByName, dfs)
 
 
 def main():
@@ -251,7 +298,9 @@ def main():
     utils.load_env()
     root, project = (os.getenv("DATA_ROOT"), os.getenv("PROJECT_KEY"))
     spark = utils.create_spark_session()
-    fars_data_path = utils.get_dir(root, project, "external", os.getenv("FARS_KEY"))
+    fars_data_path = utils.get_dir(
+        root, project, "external", os.getenv("FARS_KEY")
+    )
     make_filenames_case_consistent(fars_data_path)
 
     if cmd == "A":
