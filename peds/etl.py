@@ -276,15 +276,59 @@ def person_pipeline(root, project):
             df = df.toDF(*fix_spaces_in_column_names(df.columns))
             dfs_year_file[year][_file] = df
 
-    files_found = [set(dfs_year_file[y].keys()) for y in dfs_year_file.keys()]
-    for _file in reduce(set.intersection, files_found):
+    files_found = reduce(
+        set.intersection,
+        [set(dfs_year_file[y].keys()) for y in sorted(dfs_year_file.keys())],
+    )
+
+    all_years_by_file, common_cols = {}, {}
+    for _file in files_found:
         # get all dataframes for a given datafile
         dfs = [dfs_year_file[yr][_file] for yr in dfs_year_file.keys()]
-        common_cols = [find_common_set_of_column_names(dfs)]
+        common_cols[_file] = find_common_set_of_column_names(dfs)
         # select common columns in all dataframes
-        dfs = [df.select(*common_cols) for df in dfs]
+        dfs = [df.select(*common_cols[_file]) for df in dfs]
         # union the dataframes together by column name
-        reduce(DataFrame.unionByName, dfs)
+        all_years_by_file[_file] = reduce(DataFrame.unionByName, dfs)
+
+    # prepare to join by removing duplicate column names
+    print(f"files_found={files_found}")
+    print(f"common_cols={common_cols}")
+    dup_cols = reduce(
+        set.intersection, map(set, [common_cols[f] for f in files_found])
+    )
+    JOIN_ON_COLUMN = "ST_CASE"
+    dup_cols.discard(JOIN_ON_COLUMN)
+    print(f"dup_cols={dup_cols}")
+    keep_cols = set(all_years_by_file["ACCIDENT.CSV"].columns) - set(dup_cols)
+    all_years_by_file["ACCIDENT.CSV"] = all_years_by_file[
+        "ACCIDENT.CSV"
+    ].select(*keep_cols)
+
+    # join files
+    person_df = all_years_by_file["ACCIDENT.CSV"].join(
+        all_years_by_file["PERSON.CSV"], on=[JOIN_ON_COLUMN]
+    )
+
+    # extract ped and cyclists (i.e., people not in vehicles)
+    # Non-Occupants are identified by vehicle number 0 and are
+    # numbered consecutively starting with 1 for each non-motorist.
+    ped_cyclist_df = person_df.filter(person_df.VEH_NO == 0)
+
+    # show the number of records
+    print(f"\nRows: {ped_cyclist_df.count():,}")
+
+    # data quality check
+    assert ped_cyclist_df.count() > 0, "ped_cyclist_df dataframe is empty!"
+
+    # save resulting dataframe for analysis
+    output_path = str(
+        utils.get_dir(root, project, "interim", "FARS").joinpath(
+            "ped_cyclist_df.csv"
+        )
+    )
+    print(f"output_path={output_path}")
+    ped_cyclist_df.write.csv(output_path, mode="overwrite", header=True)
 
 
 def main():
