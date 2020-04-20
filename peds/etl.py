@@ -256,7 +256,6 @@ def person_pipeline(root, project):
     fars_data_path = utils.get_dir(
         root, project, "external", os.getenv("FARS_KEY")
     )
-    print(root, project, "external", os.getenv("FARS_KEY"))
     print(f"\nRunning locally using FARS data from {fars_data_path}\n")
 
     files = [
@@ -292,14 +291,11 @@ def person_pipeline(root, project):
         all_years_by_file[_file] = reduce(DataFrame.unionByName, dfs)
 
     # prepare to join by removing duplicate column names
-    print(f"files_found={files_found}")
-    print(f"common_cols={common_cols}")
     dup_cols = reduce(
         set.intersection, map(set, [common_cols[f] for f in files_found])
     )
     JOIN_ON_COLUMN = "ST_CASE"
     dup_cols.discard(JOIN_ON_COLUMN)
-    print(f"dup_cols={dup_cols}")
     keep_cols = set(all_years_by_file["ACCIDENT.CSV"].columns) - set(dup_cols)
     all_years_by_file["ACCIDENT.CSV"] = all_years_by_file[
         "ACCIDENT.CSV"
@@ -315,10 +311,10 @@ def person_pipeline(root, project):
     # numbered consecutively starting with 1 for each non-motorist.
     ped_cyclist_df = person_df.filter(person_df.VEH_NO == 0)
 
-    # show the number of records
-    print(f"\nRows: {ped_cyclist_df.count():,}")
-
     # data quality check
+    assert (
+        ped_cyclist_df.count() < person_df.count()
+    ), "ped_cyclist_df contains too many records"
     assert ped_cyclist_df.count() > 0, "ped_cyclist_df dataframe is empty!"
 
     # save resulting dataframe for analysis
@@ -327,7 +323,7 @@ def person_pipeline(root, project):
             "ped_cyclist_df.csv"
         )
     )
-    print(f"output_path={output_path}")
+    print(f"\nWriting data to folder {output_path}")
     ped_cyclist_df.write.csv(output_path, mode="overwrite", header=True)
 
 
